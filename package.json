@@ -1,0 +1,25 @@
+{
+  "name": "smartphone_controlled_web_game",
+  "version": "1.0.0",
+  "description": "Smartphone Controlled 3D Web Game",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srissman/SmartphoneControlled3DWebGame.git"
+  },
+  "author": "Sam Rissman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/srissman/SmartphoneControlled3DWebGame/issues"
+  },
+  "homepage": "https://github.com/srissman/SmartphoneControlled3DWebGame#readme",
+  "devDependencies": {
+    "express": "*"
+  },
+  "dependencies": {
+    "socket.io": "^1.5.1"
+  }
+}
