@@ -9,6 +9,8 @@ controller_sockets = {};
 
 server.listen(port);
 
+app.use("/public", express.static(__dirname + '/public'));
+
 app
 
   // Set up index
@@ -50,6 +52,17 @@ io.sockets.on('connection', function (socket) {
 
 			game_sockets[game_socket_id].socket.emit("controller_connected", true);
 
+			// Forward the changes onto the relative game socket
+			socket.on('controller_state_change', function(data) {
+
+			  if (game_sockets[game_socket_id]) {
+
+			    // Notify relevant game socket of controller state change
+			    game_sockets[game_socket_id].socket.emit("controller_state_change", data)
+			  }
+
+			});
+
 			socket.emit("controller_connected", true);
 
 		} else {
@@ -69,7 +82,7 @@ io.sockets.on('connection', function (socket) {
 	  	console.log("Game disconnected");
 
 	  	if (controller_sockets[game_sockets[socket.id].controller_id]) {
-	  		
+
 	  		controller_sockets[game_sockets[socket.id].controller_id].socket.emit("controller_connected", false);
 	  		controller_sockets[game_sockets[socket.id].controller_id].game_id = undefined;
 	  	}
