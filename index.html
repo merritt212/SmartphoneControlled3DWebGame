@@ -4,6 +4,7 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="//davidshimjs.github.com/qrcodejs/qrcode.min.js"></script>
 	<script src="//threejs.org/build/three.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.0.0/pixi.min.js"></script>
 	<style>
 		body{
 			margin: 0;
@@ -14,9 +15,30 @@
 			padding: 20px;
 			background: white;
 		}
+
+		#accell {
+			font-size:50px;
+		}
 	</style>
 </head>
-<body></body>
+<body>
+<div class="accell">Acceleration</div>
+	<div id="accellx" class="accell"></div>
+	<div id="accelly" class="accell"></div>
+	<div id="accellz" class="accell"></div>
+	<br />
+	<br />
+	<div class="accell">Acceleration Including Gravity</div>
+	<div id="accellGravx" class="accell"></div>
+	<div id="accellGravy" class="accell"></div>
+	<div id="accellGravz" class="accell"></div>
+	<br />
+	<br />
+	<div class="accell">Rotation</div>
+	<div id="rotationx" class="accell"></div>
+	<div id="rotationy" class="accell"></div>
+	<div id="rotationz" class="accell"></div>
+</body>
 <script>
 var ip = '192.168.167.130', // Your ip
 		port = ':2000',
@@ -41,116 +63,54 @@ io.on('connect', function() {
 			QR_code = new QRCode("QR_code");
 			QR_code.makeCode(url);
 		},
+		makeCat = function(){
+			var renderer = PIXI.autoDetectRenderer(
+				1000, 1000,
+				{antialias: false, transparent: false, resolution: 1}
+				);
+
+			//Add the canvas to the HTML document
+			document.body.appendChild(renderer.view);
+
+			//Create a container object called the `stage`
+			var stage = new PIXI.Container();
+
+			renderer.backgroundColor = 0x061639;
+
+			renderer.view.style.position = "absolute";
+			renderer.view.style.display = "block";
+			renderer.autoResize = true;
+			renderer.resize(window.innerWidth, window.innerHeight);
+
+			//Use Pixi's built-in `loader` object to load an image
+			PIXI.loader
+			  .add("images/cat.png")
+			  .load(setup);
+
+			//This `setup` function will run when the image has loaded
+			function setup() {
+
+			  //Create the `cat` sprite from the texture
+			  var cat = new PIXI.Sprite(
+			    PIXI.loader.resources["/images/cat.png"].texture
+			  );
+
+			  //Change the sprite's position
+			  cat.x = window.innerWidth / 2;
+			  cat.y = window.innerHeight / 2;
+
+			  //Add the cat to the stage
+			  stage.addChild(cat);
+
+			  //Render the stage   
+			  renderer.render(stage);
+			}
+		},
 		game_connected = function(){
+			makeCat();
 			create_QR();
 			io.removeListener('game_connected', game_connected);
-		},
-		renderer = new THREE.WebGLRenderer({
-			antialias: true
-		}),
-		scene = new THREE.Scene(),
-		camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000),
-		// Lights
-		ambient_light 		= new THREE.AmbientLight(0x222222),
-		directional_light = new THREE.DirectionalLight(0xffffff, 1),
-		// Used to load JSON models
-		loader = new THREE.JSONLoader(),
-		// Floor mesh
-		floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(300,300), new THREE.MeshLambertMaterial({color: 0x22FF11})),
-		// Render loop
-		render = function(){
-			// Render using scene and camera
-			renderer.render(scene, camera);
-			if(car){
-				// Rotate car
-				if(controller_state.steer){
-					// Gives a number ranging from 0 to 1
-					var percentage_speed = (speed / 2);
-					// Rotate the car using the steer value
-					// Multiplying it by the percentage speed makes the car not turn
-					// unless accelerating and turns quicker as the speed increases.
-					car.rotateY(controller_state.steer * percentage_speed);
-				}
-				// If controller is accelerating
-				if(controller_state.accelerate){
-					// Add to speed until it is 2
-					if(speed < 2){
-						speed += 0.05;
-					}else{
-						speed = 2;
-					}
-				// If controller is not accelerating
-				}else{
-					// Subtract from speed until 0
-					if(0 < speed){
-						speed -= 0.05;
-					}else{
-						speed = 0;
-					}
-				}
-				// Move car "forward" at speed
-				car.translateZ(speed);
-				// Collisions
-				if(car.position.x > 150){
-					car.position.x = 150;
-				}
-				if(car.position.x < -150){
-					car.position.x = -150;
-				}
-				if(car.position.z > 150){
-					car.position.z = 150;
-				}
-				if(car.position.z < -150){
-					car.position.z = -150;
-				}
-			}
-			// Call self
-			requestAnimationFrame(render);
-		},
-		car,
-		speed = 0,
-		controller_state = {};
-		// Enable shadows
-		renderer.shadowMapEnabled = true;
-		// Moves the camera "backward" (z) and "up" (y)
-		camera.position.z = -300;
-		camera.position.y = 100;
-		// Points the camera at the center of the floor
-		camera.lookAt(floor.position);
-		// Moves the directional light
-		directional_light.position.y = 150; // "up" / "down"
-		directional_light.position.x = -100; // "left" / "right"
-		directional_light.position.z = 60; // "forward" / "backward"
-		// Make the light able to cast shadows
-		directional_light.castShadow = true;
-		// Rotates the floor 90 degrees, so that it is horizontal
-		floor.rotation.x = -90 * (Math.PI / 180)
-		// Make the floor able to recieve shadows
-		floor.receiveShadow = true;
-		// Load the car model
-		loader.load(
-			'public/car.js',
-			function ( geometry, materials ) {
-				// Create the mesh from loaded geometry and materials
-				var material = new THREE.MeshFaceMaterial( materials );
-				car = new THREE.Mesh( geometry, material );
-				// Can cast shadows
-				car.castShadow = true;
-				// Add to the scene
-				scene.add( car );
-			}
-		)
-		// Add camera, lights and floor to the scene
-		scene.add(camera);
-		scene.add(ambient_light);
-		scene.add(directional_light);
-		scene.add(floor);
-		// Set size of renderer using window dimensions
-		renderer.setSize(window.innerWidth, window.innerHeight);
-		// Append to DOM
-		document.body.appendChild(renderer.domElement);
-		// This sets off the render loop
-		render();
+		}
 		// Tell the server that the client is connecting as a game
 		io.emit('game_connect');
 		// When the server has registered this client as a game
@@ -201,6 +161,27 @@ io.on('connect', function() {
 				},
 				devicemotion = function(e){
 					controller_state.steer = e.accelerationIncludingGravity.y / 100;
+
+					controllerx = Math.round(e.acceleration.x * 100);
+					controllery = Math.round(e.acceleration.y * 100);
+					controllerz = Math.round(e.acceleration.z * 100);
+					document.getElementById("accellx").innerHTML = "X-acceleration: " + controllerx;
+					document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
+					document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
+
+					controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
+					controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
+					controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
+					document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
+					document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
+					document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
+
+					rotationx = Math.round(e.rotation.x);
+					rotationy = e.rotation.y;
+					rotationz = e.rotation.z;
+					document.getElementById("rotationx").innerHTML = "X-rotation: " + rotationx;
+					document.getElementById("rotationy").innerHTML = "Y-rotation: " + rotationy;
+					document.getElementById("rotationz").innerHTML = "Z-rotation: " + rotationz;
 					emit_updates();
 				}
 				document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
@@ -208,6 +189,7 @@ io.on('connect', function() {
 				document.body.addEventListener('touchend', touchend, false); // iOS & Android
 				document.body.addEventListener('MSPointerUp', touchend, false); // Windows Phone
 				window.addEventListener('devicemotion', devicemotion, false);
+				window.addEventListener("deviceorientation", handleOrientation, true);
 			}else{
 				// Failed connection
 				alert("Not connected!");
