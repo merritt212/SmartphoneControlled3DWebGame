@@ -19,6 +19,20 @@
 		#accell {
 			font-size:50px;
 		}
+
+		#render_square {
+			position:absolute;
+			width:10%;
+			top:30%;
+			left:50%;
+			z-index:99;
+		}
+		#pinata {
+			position:relative;
+			top:30%;
+			left:30%;
+			z-index:1;
+		}
 	</style>
 </head>
 <body>
@@ -63,147 +77,398 @@ io.on('connect', function() {
 			QR_code = new QRCode("QR_code");
 			QR_code.makeCode(url);
 		},
-		makeCat = function(){
-			var renderer = PIXI.autoDetectRenderer(
-				1000, 1000,
-				{antialias: false, transparent: false, resolution: 1}
-				);
+		// makeCat = function(){
+		// 	var renderer = PIXI.autoDetectRenderer(
+		// 		1000, 1000,
+		// 		{antialias: false, transparent: false, resolution: 1}
+		// 		);
 
-			//Add the canvas to the HTML document
-			document.body.appendChild(renderer.view);
+		// 	//Add the canvas to the HTML document
+		// 	document.body.appendChild(renderer.view);
 
-			//Create a container object called the `stage`
-			var stage = new PIXI.Container();
+		// 	//Create a container object called the `stage`
+		// 	var stage = new PIXI.Container();
 
-			renderer.backgroundColor = 0x061639;
+		// 	renderer.backgroundColor = 0x061639;
 
-			renderer.view.style.position = "absolute";
-			renderer.view.style.display = "block";
-			renderer.autoResize = true;
-			renderer.resize(window.innerWidth, window.innerHeight);
+		// 	renderer.view.style.position = "absolute";
+		// 	renderer.view.style.display = "block";
+		// 	renderer.autoResize = true;
+		// 	renderer.resize(window.innerWidth, window.innerHeight);
 
-			//Use Pixi's built-in `loader` object to load an image
-			PIXI.loader
-			  .add("images/cat.png")
-			  .load(setup);
+		// 	//Use Pixi's built-in `loader` object to load an image
+		// 	PIXI.loader
+		// 	  .add("http://visualidentity.cachefly.net/studio/websocket/images/cat.png")
+		// 	  .load(setup);
 
-			//This `setup` function will run when the image has loaded
-			function setup() {
+		// 	//This `setup` function will run when the image has loaded
+		// 	function setup() {
 
-			  //Create the `cat` sprite from the texture
-			  var cat = new PIXI.Sprite(
-			    PIXI.loader.resources["/images/cat.png"].texture
-			  );
+		// 	  //Create the `cat` sprite from the texture
+		// 	  var cat = new PIXI.Sprite(
+		// 	    PIXI.loader.resources["http://visualidentity.cachefly.net/studio/websocket/images/cat.png"].texture
+		// 	  );
 
-			  //Change the sprite's position
-			  cat.x = window.innerWidth / 2;
-			  cat.y = window.innerHeight / 2;
+		// 	  //Change the sprite's position
+		// 	  cat.x = window.innerWidth / 2;
+		// 	  cat.y = window.innerHeight / 2;
 
-			  //Add the cat to the stage
-			  stage.addChild(cat);
+		// 	  //Add the cat to the stage
+		// 	  stage.addChild(cat);
 
-			  //Render the stage   
-			  renderer.render(stage);
-			}
-		},
+		// 	  //Render the stage   
+		// 	  renderer.render(stage);
+		// 	}
+		// },
 		game_connected = function(){
-			makeCat();
+			// makeCat();
 			create_QR();
 			io.removeListener('game_connected', game_connected);
-		}
+		},
+		swing_count = 0,
+		add_swing_count = function(){
+			node = document.createElement("div");
+			node.id = 'no-of-hits';
+			textnode = document.createTextNode("Number of swings: " + swing_count);
+			node.appendChild(textnode);
+			document.body.appendChild(node);
+		},
+
+		render = function(){
+
+			// if(controller_state.swing){
+			// 	stick.style.backgroundColor = "green";
+			// }
+			// else{
+			// 	stick.style.backgroundColor = "red";
+			// }
+
+			stick_xpos = -(controller_state.steerx * (window.innerWidth * 6));
+            stick_ypos = -(controller_state.steery * (window.innerWidth * 6));
+            stick_zpos = controller_state.steerz;
+            
+            //move left and right
+            // stick.style.transform = 
+
+            //Move up and down
+            stick.style.transform = 'translateY(' + stick_ypos + 'px)' + 'translateX(' + stick_xpos + 'px)'
+
+            //Rotation of stick
+            // stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
+			
+
+
+			/*
+			accelerate: false,
+			steerx: 0,
+			steery: 0,
+			steerz: 0,
+			swing: false
+			*/
+
+			requestAnimationFrame(render);
+		},
+
+
+		controller_state = {};
+
+		stick = document.createElement("div");
+		stick.id = 'render_square';
+		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
+		document.body.appendChild(stick);
+		pinata = document.createElement("div");
+		pinata.id = 'pinata';
+		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
+		document.body.appendChild(pinata);
+/*
+		renderer = new THREE.WebGLRenderer({
+			antialias: true
+		}),
+		scene = new THREE.Scene(),
+		camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000),
+
+		// Lights
+		ambient_light 		= new THREE.AmbientLight(0x222222),
+		directional_light = new THREE.DirectionalLight(0xffffff, 1),
+
+		// Used to load JSON models
+		loader = new THREE.JSONLoader(),
+
+		// Floor mesh
+		floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(300,300), new THREE.MeshLambertMaterial({color: 0x22FF11})),
+
+		// Render loop
+		render = function(){
+
+			// Render using scene and camera
+			renderer.render(scene, camera);
+
+			if(car){
+
+				// Rotate car
+				if(controller_state.steer){
+
+					// Gives a number ranging from 0 to 1
+					var percentage_speed = (speed / 2);
+
+					// Rotate the car using the steer value
+					// Multiplying it by the percentage speed makes the car not turn
+					// unless accelerating and turns quicker as the speed increases.
+					car.rotateY(controller_state.steer * percentage_speed);
+				}
+
+				// If controller is accelerating
+				if(controller_state.accelerate){
+
+					// Add to speed until it is 2
+					if(speed < 2){
+						speed += 0.05;
+					}else{
+						speed = 2;
+					}
+
+				// If controller is not accelerating
+				}else{
+
+					// Subtract from speed until 0
+					if(0 < speed){
+						speed -= 0.05;
+					}else{
+						speed = 0;
+					}
+				}
+
+				// Move car "forward" at speed
+				car.translateZ(speed);
+
+				// Collisions
+				if(car.position.x > 150){
+					car.position.x = 150;
+				}
+				if(car.position.x < -150){
+					car.position.x = -150;
+				}
+				if(car.position.z > 150){
+					car.position.z = 150;
+				}
+				if(car.position.z < -150){
+					car.position.z = -150;
+				}
+			}
+
+			// Call self
+			requestAnimationFrame(render);
+		},
+		car,
+		speed = 0,
+		controller_state = {};
+
+		// Enable shadows
+		renderer.shadowMapEnabled = true;
+
+		// Moves the camera "backward" (z) and "up" (y)
+		camera.position.z = -300;
+		camera.position.y = 100;
+
+		// Points the camera at the center of the floor
+		camera.lookAt(floor.position);
+
+		// Moves the directional light
+		directional_light.position.y = 150; // "up" / "down"
+		directional_light.position.x = -100; // "left" / "right"
+		directional_light.position.z = 60; // "forward" / "backward"
+
+		// Make the light able to cast shadows
+		directional_light.castShadow = true;
+
+		// Rotates the floor 90 degrees, so that it is horizontal
+		floor.rotation.x = -90 * (Math.PI / 180)
+
+		// Make the floor able to recieve shadows
+		floor.receiveShadow = true;
+
+
+		// Load the car model
+		loader.load(
+			'public/car.js',
+
+			function ( geometry, materials ) {
+
+				// Create the mesh from loaded geometry and materials
+				var material = new THREE.MeshFaceMaterial( materials );
+				car = new THREE.Mesh( geometry, material );
+
+				// Can cast shadows
+				car.castShadow = true;
+
+				// Add to the scene
+				scene.add( car );
+			}
+		)
+
+		// Add camera, lights and floor to the scene
+		scene.add(camera);
+		scene.add(ambient_light);
+		scene.add(directional_light);
+		scene.add(floor);
+
+		// Set size of renderer using window dimensions
+		renderer.setSize(window.innerWidth, window.innerHeight);
+
+		// Append to DOM
+		document.body.appendChild(renderer.domElement);
+*/
+		//add_swing_count();
+		// This sets off the render loop
+		render();
+
 		// Tell the server that the client is connecting as a game
 		io.emit('game_connect');
+
 		// When the server has registered this client as a game
 		// Create a QR code which will be a url with this game id as a parameter
 		io.on('game_connected', game_connected);
+
 		// When a controller has connected/disconnected to this game
 		io.on('controller_connected', function(connected){
+
 			if(connected){
+
 				// Hide the QR code
 				QR_code_element.style.display = "none";
+
+				//add_swing_count();
+
 			}else{
+
 				// Show the QR code
 				QR_code_element.style.display = "block";
+
 				controller_state = {};
+
 			}
+
 		})
+
 		// When the server sends a changed controller state update it in the game
 		io.on('controller_state_change', function(state){
+
 			controller_state = state;
+
 		});
+
 	},
+
 	// Controller set up
 	controller = function(game_id){
+
 		// Tell the server this client is connecting as a controller
 		// sending the id of the game to connect to
 		io.emit('controller_connect', game_id);
+
 		// Server will send back a connected boolean
 		io.on('controller_connected', function(connected){
+
 			if(connected){
+
 				// Successful connection
 				alert("Connected!");
+
 				var controller_state = {
 					accelerate: false,
-					steer: 0
+					steerx: 0,
+					steery: 0,
+					steerz: 0,
+					swing: false
 				},
 				emit_updates = function(){
 					io.emit('controller_state_change', controller_state);
 				}
 				touchstart = function(e){
 					e.preventDefault();
+
 					controller_state.accelerate = true;
 					emit_updates();
 				},
 				touchend = function(e){
 					e.preventDefault();
+					
 					controller_state.accelerate = false;
 					emit_updates();
 				},
 				devicemotion = function(e){
-					controller_state.steer = e.accelerationIncludingGravity.y / 100;
+                    controller_state.steerx = e.accelerationIncludingGravity.x / 100;
+                    controller_state.steery = e.accelerationIncludingGravity.y / 100;
+                    controller_state.steerz = e.accelerationIncludingGravity.z * 9;
 
-					controllerx = Math.round(e.acceleration.x * 100);
-					controllery = Math.round(e.acceleration.y * 100);
-					controllerz = Math.round(e.acceleration.z * 100);
-					document.getElementById("accellx").innerHTML = "X-acceleration: " + controllerx;
-					document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
-					document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
+                    /*
+                    controllerx = Math.round(e.acceleration.x * 100);
+                    controllery = Math.round(e.acceleration.y * 100);
+                    controllerz = Math.round(e.acceleration.z * 100);
+                    document.getElementById("accellx").innerHTML = "X-acceleration: " + controllerx;
+                    document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
+                    document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
+*/
+                    controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
+                    controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
+                    controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
+                    document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
+                    document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
+                    document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
+/*
+                    rotationx = Math.round(e.rotation.x);
+                    rotationy = Math.round(e.rotation.y);
+                    rotationz = Math.round(e.rotation.z);
+                    document.getElementById("rotationx").innerHTML = "X-rotation: " + rotationx;
+                    document.getElementById("rotationy").innerHTML = "Y-rotation: " + rotationy;
+                    document.getElementById("rotationz").innerHTML = "Z-rotation: " + rotationz;
+                    */
 
-					controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
-					controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
-					controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
-					document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
-					document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
-					document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
+                    emit_updates();
+                },
 
-					rotationx = Math.round(e.rotation.x);
-					rotationy = e.rotation.y;
-					rotationz = e.rotation.z;
-					document.getElementById("rotationx").innerHTML = "X-rotation: " + rotationx;
-					document.getElementById("rotationy").innerHTML = "Y-rotation: " + rotationy;
-					document.getElementById("rotationz").innerHTML = "Z-rotation: " + rotationz;
-					emit_updates();
-				}
+                detect_swing = function(e){
+                	if(((e.acceleration.x * 1000) > 1500 || (e.acceleration.x * 1000) < -1500 ) &&
+                		//((e.acceleration.y * 1000) > 1000 || (e.acceleration.y * 1000) < -1000 ) &&
+                		((e.acceleration.z * 1000) > 1500 || (e.acceleration.z * 1000) < -1500 )){
+                		controller_state.swing = true;
+                	}
+                	else{
+                		controller_state.swing = false;
+                	}
+
+                	emit_updates();
+                },
+
 				document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
 				document.body.addEventListener('MSPointerDown', touchstart, false); // Windows Phone
 				document.body.addEventListener('touchend', touchend, false); // iOS & Android
 				document.body.addEventListener('MSPointerUp', touchend, false); // Windows Phone
 				window.addEventListener('devicemotion', devicemotion, false);
-				window.addEventListener("deviceorientation", handleOrientation, true);
+				window.addEventListener('devicemotion', detect_swing, false);
+
 			}else{
+
 				// Failed connection
 				alert("Not connected!");
 			}
 		});
+
 	}
+
 	// If the url has an id in it
 	if(current_url.indexOf('?id=') > 0){
+
 		// Set up the controller using the game id in the url
 		controller(current_url.split('?id=')[1])
+
 	}else{
+
 		// Set up the game using ip
 		game(ip);
+
 	}
 });
+
 </script>
 </html>
