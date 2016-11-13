@@ -3,8 +3,6 @@
 	<title>Smartphone Controller Game</title>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="//davidshimjs.github.com/qrcodejs/qrcode.min.js"></script>
-	<script src="//threejs.org/build/three.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.0.0/pixi.min.js"></script>
 	<style>
 		body{
 			margin: 0;
@@ -24,7 +22,7 @@
 			position:absolute;
 			width:10%;
 			top:30%;
-			left:50%;
+			left:40%;
 			z-index:99;
 		}
 		#pinata {
@@ -32,6 +30,11 @@
 			top:30%;
 			left:30%;
 			z-index:1;
+		}
+		#right {
+			position: absolute;
+			top:0;
+			left:500px;
 		}
 	</style>
 </head>
@@ -76,6 +79,11 @@ io.on('connect', function() {
 			// Create a QRCode
 			QR_code = new QRCode("QR_code");
 			QR_code.makeCode(url);
+		},
+		showPos = function(elem) {
+		  var r = elem.getBoundingClientRect()
+		  alert("Top/Left: "+r.top+" / "+r.left)
+		  alert("Right/Bottom: "+r.right+" / "+r.bottom)
 		},
 		// makeCat = function(){
 		// 	var renderer = PIXI.autoDetectRenderer(
@@ -133,7 +141,6 @@ io.on('connect', function() {
 			node.appendChild(textnode);
 			document.body.appendChild(node);
 		},
-
 		render = function(){
 
 			// if(controller_state.swing){
@@ -143,18 +150,58 @@ io.on('connect', function() {
 			// 	stick.style.backgroundColor = "red";
 			// }
 
+			//Current position of stick div
+			currentPos = stick.getBoundingClientRect();
+			left = currentPos.left;
+			top = currentPos.top;
+
+			
+		// 	if (move < (window.innerWidth-stick.offsetWidth)){
+		// 	stick.style.left = move + 'px';
+		// } else {
+
+		// }
+
+
 			stick_xpos = -(controller_state.steerx * (window.innerWidth * 6));
             stick_ypos = -(controller_state.steery * (window.innerWidth * 6));
             stick_zpos = controller_state.steerz;
             
+
+            //Move left or right depending on positive or negitive x axis value
+            if (stick_xpos >= 0) {
+				moveLeftRight = left + stick_xpos;
+				if (moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+					stick.style.left = moveLeftRight + 'px';
+				}
+			} else {
+				moveLeftRight = left - stick_xpos;
+				if (moveLeftRight > (stick.offsetWidth)){
+					stick.style.left = moveLeftRight + 'px';
+				}
+			}
+
+			if (stick_ypos >= stick.offsetHeight) {
+				moveUpDown = top + stick_ypos;
+				if (moveUpDown < (window.innerHeight - stick.offsetHeight)){
+					stick.style.top = moveUpDown + 'px';
+				}
+			} else {
+				moveUpDown = top - stick_ypos;
+				if (moveUpDown > (stick.offsetHeight)){
+					stick.style.top = moveUpDown + 'px';
+				}
+			}
+
+
             //move left and right
             // stick.style.transform = 
 
             //Move up and down
-            stick.style.transform = 'translateY(' + stick_ypos + 'px)' + 'translateX(' + stick_xpos + 'px)'
+            // stick.style.transform = 'translateY(' + stick_ypos + 'px)' + 'translateX(' + stick_xpos + 'px)'
 
             //Rotation of stick
-            // stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
+            stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
 			
 
 
@@ -176,10 +223,29 @@ io.on('connect', function() {
 		stick.id = 'render_square';
 		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
 		document.body.appendChild(stick);
+		showPos(stick);
+
 		pinata = document.createElement("div");
 		pinata.id = 'pinata';
 		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
 		document.body.appendChild(pinata);
+
+		button = document.createElement("div");
+		button.id = 'right';
+		button.innerHTML = '<button onclick="moveleft()">Move left</button>';
+		document.body.appendChild(button);
+
+		moveleft = function(){
+			
+			currentPos = stick.getBoundingClientRect();
+			left = currentPos.left;
+			move = left + 50;
+			if (move < (window.innerWidth-stick.offsetWidth)){
+			stick.style.left = move + 'px';
+		} else {
+
+		}
+		};
 /*
 		renderer = new THREE.WebGLRenderer({
 			antialias: true
