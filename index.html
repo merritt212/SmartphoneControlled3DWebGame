@@ -57,6 +57,14 @@
 			top:0;
 			left:900px;
 		}
+
+		#mobile_btn {
+			width:200px;
+			height:200px; 
+			background-color: green;
+			color:white;
+			font-size:30px;
+		}
 	</style>
 </head>
 <body>
@@ -174,11 +182,6 @@ io.on('connect', function() {
 			currentPos = stick.getBoundingClientRect();
 			left = currentPos.left;
 			up = currentPos.top;
-			moveLeftRight = currentPos.left;
-			moveUpDown = currentPos.top;
-
-			deviceUpDown = controller_state.steery;
-			deviceLeftRight = controller_state.steerx;
 			
 		// 	if (move < (window.innerWidth-stick.offsetWidth)){
 		// 	stick.style.left = move + 'px';
@@ -192,34 +195,37 @@ io.on('connect', function() {
             stick_zpos = controller_state.steerz;
 
             //Move left or right depending on positive or negitive x axis value
-            if (stick_xpos >= 1 && stick_xpos < 90) {
+            if (stick_xpos >= 270 && stick_xpos < 360) {
 				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-					deviceLeftRight = left - 10;
+					moveLeftRight = left - 5;
 					console.log('left', deviceLeftRight);
 				} else {
-					
+					moveLeftRight = left + 50;
+					window.navigator.vibrate(100);
 				}
-			} else if (stick_xpos >= 269 && stick_xpos < 360) {
+			} else if (stick_xpos <= 260 && stick_xpos > 180) {
 				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-					deviceLeftRight = left + 10;
+					moveLeftRight = left + 5;
 					console.log('right', deviceLeftRight);
-
 				} else {
-					
+					moveLeftRight = left - 50;
+					window.navigator.vibrate(100);
 				}
 			}
 
-			if (stick_ypos >= 2 && stick_ypos <= 90) {
-				if (moveUpDown > (0) && (window.innerHeight - stick.offsetHeight)){
-					deviceUpDown = up + 10;
+			if (stick_ypos >= 5 && stick_ypos <= 90) {
+				if (moveUpDown > (-(stick.offsetHeight / 2)) && (window.innerHeight - stick.offsetHeight)){
+					moveUpDown = up - 5;
+					console.log('up', up);
 				} else {
-					
+					moveUpDown = up + 100;
 				}
-			} else if (stick_xpos <= -2 && stick_xpos > -90) {
-				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (0)){
-					deviceUpDown = up - 10;
+			} else if (stick_xpos >= -15 && stick_xpos > -90) {
+				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (-(stick.offsetHeight / 2))){
+					moveUpDown = up + 5;
+					console.log('down', up);
 				} else {
-					
+					moveUpDown = up - 100;
 				}
 			}
 
@@ -227,7 +233,7 @@ io.on('connect', function() {
             //move left and right
             // stick.style.transform = 
             //Move up and down
-            $stick.css({"top": deviceUpDown, "left": deviceLeftRight});
+            $stick.css({"top": moveUpDown, "left": moveLeftRight});
 
             //Rotation of stick
             // stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
@@ -255,11 +261,20 @@ io.on('connect', function() {
 		showPos(stick);
 		$stick = $(stick);
 
+		deviceUpDown = window.innerHeight / 4;
+		deviceLeftRight = window.innerWidth / 2;
+		currentPos = stick.getBoundingClientRect();
+		moveLeftRight = currentPos.left;
+			moveUpDown = currentPos.top;
+
 		pinata = document.createElement("div");
 		pinata.id = 'pinata';
 		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
 		document.body.appendChild(pinata);
 
+		hit = function() {
+			alert("hit pinata");
+		}
 		// buttonleft = document.createElement("div");
 		// buttonleft.id = 'left';
 		// buttonleft.innerHTML = '<button onclick="moveleft()">Move left</button>';
@@ -489,7 +504,7 @@ io.on('connect', function() {
 
 				// Hide the QR code
 				QR_code_element.style.display = "none";
-
+				setInitialOrientation();
 				//add_swing_count();
 
 			}else{
@@ -593,6 +608,15 @@ io.on('connect', function() {
                 	emit_updates();
                 },
 
+                setInitialOrientation = function handleOrientation(e) {
+
+                	initialAlpha = e.alpha;
+                	initialBeta = e.beta;
+                	initialGamma = e.gamma;
+
+                	emit_updates();
+                }
+
                 handleOrientation = function handleOrientation(e) {
 				  // deviceabsolute = e.absolute;
 				  controller_state.steerx  = e.alpha;
@@ -603,6 +627,8 @@ io.on('connect', function() {
 				  document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controller_state.steerx;
                   document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controller_state.steery;
                   document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controller_state.steerz;
+
+
 				  emit_updates();
 				},
 
@@ -614,6 +640,11 @@ io.on('connect', function() {
 				window.addEventListener('devicemotion', devicemotion, false);
 				window.addEventListener('devicemotion', detect_swing, false);
 				window.addEventListener("deviceorientation", handleOrientation, true);
+
+				mobilebtn = document.createElement("div");
+					mobilebtn.id = 'mobile_btn';
+					mobilebtn.innerHTML = '<button onclick="hit()">HIT ME!!!!!!!</button>';
+					document.body.appendChild(mobilebtn);
 
 			}else{
 
