@@ -3,6 +3,7 @@
 	<title>Smartphone Controller Game</title>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="//davidshimjs.github.com/qrcodejs/qrcode.min.js"></script>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 	<style>
 		body{
 			margin: 0;
@@ -31,10 +32,30 @@
 			left:30%;
 			z-index:1;
 		}
-		#right {
+		#left {
 			position: absolute;
 			top:0;
 			left:500px;
+		}
+		#right {
+			position: absolute;
+			top:0;
+			left:600px;
+		}
+		#up {
+			position: absolute;
+			top:0;
+			left:700px;
+		}
+		#down {
+			position: absolute;
+			top:0;
+			left:800px;
+		}
+		#rotate {
+			position: absolute;
+			top:0;
+			left:900px;
 		}
 	</style>
 </head>
@@ -82,8 +103,7 @@ io.on('connect', function() {
 		},
 		showPos = function(elem) {
 		  var r = elem.getBoundingClientRect()
-		  alert("Top/Left: "+r.top+" / "+r.left)
-		  alert("Right/Bottom: "+r.right+" / "+r.bottom)
+		  alert("Top: "+r.top);
 		},
 		// makeCat = function(){
 		// 	var renderer = PIXI.autoDetectRenderer(
@@ -153,8 +173,12 @@ io.on('connect', function() {
 			//Current position of stick div
 			currentPos = stick.getBoundingClientRect();
 			left = currentPos.left;
-			top = currentPos.top;
+			up = currentPos.top;
+			moveLeftRight = currentPos.left;
+			moveUpDown = currentPos.top;
 
+			deviceUpDown = controller_state.steery;
+			deviceLeftRight = controller_state.steerx;
 			
 		// 	if (move < (window.innerWidth-stick.offsetWidth)){
 		// 	stick.style.left = move + 'px';
@@ -163,45 +187,50 @@ io.on('connect', function() {
 		// }
 
 
-			stick_xpos = -(controller_state.steerx * (window.innerWidth * 6));
-            stick_ypos = -(controller_state.steery * (window.innerWidth * 6));
+			stick_xpos = controller_state.steerx;
+            stick_ypos = controller_state.steery;
             stick_zpos = controller_state.steerz;
-            
 
             //Move left or right depending on positive or negitive x axis value
-            if (stick_xpos >= 0) {
-				moveLeftRight = left + stick_xpos;
-				if (moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-					stick.style.left = moveLeftRight + 'px';
+            if (stick_xpos >= 1 && stick_xpos < 90) {
+				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+					deviceLeftRight = left - 10;
+					console.log('left', deviceLeftRight);
+				} else {
+					
 				}
-			} else {
-				moveLeftRight = left - stick_xpos;
-				if (moveLeftRight > (stick.offsetWidth)){
-					stick.style.left = moveLeftRight + 'px';
+			} else if (stick_xpos >= 269 && stick_xpos < 360) {
+				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+					deviceLeftRight = left + 10;
+					console.log('right', deviceLeftRight);
+
+				} else {
+					
 				}
 			}
 
-			if (stick_ypos >= stick.offsetHeight) {
-				moveUpDown = top + stick_ypos;
-				if (moveUpDown < (window.innerHeight - stick.offsetHeight)){
-					stick.style.top = moveUpDown + 'px';
+			if (stick_ypos >= 2 && stick_ypos <= 90) {
+				if (moveUpDown > (0) && (window.innerHeight - stick.offsetHeight)){
+					deviceUpDown = up + 10;
+				} else {
+					
 				}
-			} else {
-				moveUpDown = top - stick_ypos;
-				if (moveUpDown > (stick.offsetHeight)){
-					stick.style.top = moveUpDown + 'px';
+			} else if (stick_xpos <= -2 && stick_xpos > -90) {
+				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (0)){
+					deviceUpDown = up - 10;
+				} else {
+					
 				}
 			}
 
 
             //move left and right
             // stick.style.transform = 
-
             //Move up and down
-            // stick.style.transform = 'translateY(' + stick_ypos + 'px)' + 'translateX(' + stick_xpos + 'px)'
+            $stick.css({"top": deviceUpDown, "left": deviceLeftRight});
 
             //Rotation of stick
-            stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
+            // stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
 			
 
 
@@ -224,28 +253,86 @@ io.on('connect', function() {
 		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
 		document.body.appendChild(stick);
 		showPos(stick);
+		$stick = $(stick);
 
 		pinata = document.createElement("div");
 		pinata.id = 'pinata';
 		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
 		document.body.appendChild(pinata);
 
-		button = document.createElement("div");
-		button.id = 'right';
-		button.innerHTML = '<button onclick="moveleft()">Move left</button>';
-		document.body.appendChild(button);
+		// buttonleft = document.createElement("div");
+		// buttonleft.id = 'left';
+		// buttonleft.innerHTML = '<button onclick="moveleft()">Move left</button>';
+		// document.body.appendChild(buttonleft);
 
-		moveleft = function(){
+		// buttonright = document.createElement("div");
+		// buttonright.id = 'right';
+		// buttonright.innerHTML = '<button onclick="moveright()">Move right</button>';
+		// document.body.appendChild(buttonright);
+
+		// buttonup = document.createElement("div");
+		// buttonup.id = 'up';
+		// buttonup.innerHTML = '<button onclick="moveup()">Move up</button>';
+		// document.body.appendChild(buttonup);
+
+		// buttondown = document.createElement("div");
+		// buttondown.id = 'down';
+		// buttondown.innerHTML = '<button onclick="movedown()">Move down</button>';
+		// document.body.appendChild(buttondown);
+
+		// moveleft = function(){
 			
-			currentPos = stick.getBoundingClientRect();
-			left = currentPos.left;
-			move = left + 50;
-			if (move < (window.innerWidth-stick.offsetWidth)){
-			stick.style.left = move + 'px';
-		} else {
+		// 	currentPos = stick.getBoundingClientRect();
+		// 	left = currentPos.left;
+		// 	move = left - 50;
+		// 	if (move > (0)){
+		// 	stick.style.left = move + 'px';
+		// } else {
 
-		}
-		};
+		// }
+		// };
+
+		// moveright = function(){
+			
+		// 	currentPos = stick.getBoundingClientRect();
+		// 	left = currentPos.left;
+		// 	move = left + 50;
+		// 	if (move < (window.innerWidth-stick.offsetWidth)){
+		// 	stick.style.left = move + 'px';
+		// } else {
+
+		// }
+		// };
+
+		// moveup = function(){
+			
+		// 	currentPos = stick.getBoundingClientRect();
+		// 	up = currentPos.top;
+		// 	move = up - 50;
+		// 	console.log(stick.offsetHeight);
+		// 	console.log(move);
+		// 	if (move > (0)){
+		// 	stick.style.top = move + 'px';
+		// } else {
+
+		// }
+
+		// };
+
+		// movedown = function(){
+			
+		// 	currentPos = stick.getBoundingClientRect();
+		// 	down = currentPos.top;
+		// 	move = down + 50;
+		// 	console.log(stick.offsetHeight);
+		// 	console.log(move);
+		// 	if (move < (window.innerHeight - stick.offsetHeight)){
+		// 	stick.style.top = move + 'px';
+		// } else {
+
+		// }
+		// };
+
 /*
 		renderer = new THREE.WebGLRenderer({
 			antialias: true
@@ -463,9 +550,9 @@ io.on('connect', function() {
 					emit_updates();
 				},
 				devicemotion = function(e){
-                    controller_state.steerx = e.accelerationIncludingGravity.x / 100;
-                    controller_state.steery = e.accelerationIncludingGravity.y / 100;
-                    controller_state.steerz = e.accelerationIncludingGravity.z * 9;
+                    // controller_state.steerx = e.accelerationIncludingGravity.x / 100;
+                    // controller_state.steery = e.accelerationIncludingGravity.y / 100;
+                    // controller_state.steerz = e.accelerationIncludingGravity.z * 9;
 
                     /*
                     controllerx = Math.round(e.acceleration.x * 100);
@@ -475,12 +562,12 @@ io.on('connect', function() {
                     document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
                     document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
 */
-                    controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
-                    controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
-                    controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
-                    document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
-                    document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
-                    document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
+                    // controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
+                    // controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
+                    // controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
+                    // document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
+                    // document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
+                    // document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
 /*
                     rotationx = Math.round(e.rotation.x);
                     rotationy = Math.round(e.rotation.y);
@@ -506,12 +593,27 @@ io.on('connect', function() {
                 	emit_updates();
                 },
 
+                handleOrientation = function handleOrientation(e) {
+				  // deviceabsolute = e.absolute;
+				  controller_state.steerx  = e.alpha;
+				  controller_state.steery  = e.beta;
+				  controller_state.steerz  = e.gamma;
+
+				  // Do stuff with the new orientation data
+				  document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controller_state.steerx;
+                  document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controller_state.steery;
+                  document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controller_state.steerz;
+				  emit_updates();
+				},
+
+
 				document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
 				document.body.addEventListener('MSPointerDown', touchstart, false); // Windows Phone
 				document.body.addEventListener('touchend', touchend, false); // iOS & Android
 				document.body.addEventListener('MSPointerUp', touchend, false); // Windows Phone
 				window.addEventListener('devicemotion', devicemotion, false);
 				window.addEventListener('devicemotion', detect_swing, false);
+				window.addEventListener("deviceorientation", handleOrientation, true);
 
 			}else{
 
