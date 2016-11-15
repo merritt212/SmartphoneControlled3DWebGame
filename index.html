@@ -8,6 +8,10 @@
 		body{
 			margin: 0;
 		}
+		#backgroundimage img {
+			width: 100%;
+			height: 100%;
+		}
 		#QR_code{
 			position: absolute;
 			top: 0;
@@ -21,13 +25,12 @@
 
 		#render_square {
 			position:absolute;
-			width:10%;
 			top:30%;
 			left:40%;
 			z-index:99;
 		}
 		#pinata {
-			position:relative;
+			position:absolute;
 			top:30%;
 			left:30%;
 			z-index:1;
@@ -46,6 +49,8 @@
 			position: absolute;
 			top:0;
 			left:700px;
+			font-family: arial, sans-serif;
+			font-size:40px;
 		}
 		#down {
 			position: absolute;
@@ -68,10 +73,8 @@
 	</style>
 </head>
 <body>
-<div class="accell">Acceleration</div>
-	<div id="accellx" class="accell"></div>
-	<div id="accelly" class="accell"></div>
-	<div id="accellz" class="accell"></div>
+	<div class="accell">Compas Heading</div>
+	<div id="heading" class="accell"></div>
 	<br />
 	<br />
 	<div class="accell">Acceleration Including Gravity</div>
@@ -79,24 +82,21 @@
 	<div id="accellGravy" class="accell"></div>
 	<div id="accellGravz" class="accell"></div>
 	<br />
-	<br />
-	<div class="accell">Rotation</div>
-	<div id="rotationx" class="accell"></div>
-	<div id="rotationy" class="accell"></div>
-	<div id="rotationz" class="accell"></div>
 </body>
 <script>
 var ip = '192.168.167.130', // Your ip
-		port = ':2000',
-		io = io.connect(),
-		current_url = window.location.href;
+port = ':2000',
+io = io.connect(),
+current_url = window.location.href;
 io.on('connect', function() {
+	
 	// Game setup
 	var game = function(ip){
 		var QR_code_element,
+
 		create_QR = function(){
 			var QR_code,
-					url = "http://" + ip + port + "?id=" + io.id;
+			url = "http://" + ip + port + "?id=" + io.id;
 			// Create the container for the QR code to be created in
 			QR_code_element = document.createElement('div');
 			// Assign an id to the element
@@ -109,384 +109,160 @@ io.on('connect', function() {
 			QR_code = new QRCode("QR_code");
 			QR_code.makeCode(url);
 		},
-		showPos = function(elem) {
-		  var r = elem.getBoundingClientRect()
-		  alert("Top: "+r.top);
-		},
-		// makeCat = function(){
-		// 	var renderer = PIXI.autoDetectRenderer(
-		// 		1000, 1000,
-		// 		{antialias: false, transparent: false, resolution: 1}
-		// 		);
 
-		// 	//Add the canvas to the HTML document
-		// 	document.body.appendChild(renderer.view);
-
-		// 	//Create a container object called the `stage`
-		// 	var stage = new PIXI.Container();
-
-		// 	renderer.backgroundColor = 0x061639;
-
-		// 	renderer.view.style.position = "absolute";
-		// 	renderer.view.style.display = "block";
-		// 	renderer.autoResize = true;
-		// 	renderer.resize(window.innerWidth, window.innerHeight);
-
-		// 	//Use Pixi's built-in `loader` object to load an image
-		// 	PIXI.loader
-		// 	  .add("http://visualidentity.cachefly.net/studio/websocket/images/cat.png")
-		// 	  .load(setup);
-
-		// 	//This `setup` function will run when the image has loaded
-		// 	function setup() {
-
-		// 	  //Create the `cat` sprite from the texture
-		// 	  var cat = new PIXI.Sprite(
-		// 	    PIXI.loader.resources["http://visualidentity.cachefly.net/studio/websocket/images/cat.png"].texture
-		// 	  );
-
-		// 	  //Change the sprite's position
-		// 	  cat.x = window.innerWidth / 2;
-		// 	  cat.y = window.innerHeight / 2;
-
-		// 	  //Add the cat to the stage
-		// 	  stage.addChild(cat);
-
-		// 	  //Render the stage   
-		// 	  renderer.render(stage);
-		// 	}
+		//Show position of Pinata div
+		// showPos = function(elem) {
+		// 	var r = elem.getBoundingClientRect()
+		// 	alert("Top: "+r.top);
 		// },
+
+		// When game is connected create the QR code and remove game listener handler
 		game_connected = function(){
-			// makeCat();
 			create_QR();
 			io.removeListener('game_connected', game_connected);
 		},
+
+		collision_check = function(div1, div2) {
+
+			div1coords = div1.getBoundingClientRect();
+			div2coords = div2.getBoundingClientRect();
+
+			var x1 = div1coords.left;
+			var y1 = div1coords.top;
+			var h1 = div1coords.right - div1coords.left;
+			var w1 = div1coords.bottom - div1coords.top;
+			var b1 = y1 + h1;
+			var r1 = x1 + w1;
+			var x2 = div2coords.left;
+			var y2 = div2coords.top;
+			var h2 = div2coords.right - div2coords.left;
+			var w2 = div2coords.bottom - div2coords.top;
+			var b2 = y2 + h2;
+			var r2 = x2 + w2;
+
+			if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) return false;
+			return true;
+		},
+
 		swing_count = 0,
+
 		add_swing_count = function(){
-			node = document.createElement("div");
-			node.id = 'no-of-hits';
-			textnode = document.createTextNode("Number of swings: " + swing_count);
-			node.appendChild(textnode);
-			document.body.appendChild(node);
+			swings.innerHTML = 'Number of swings: ' + swing_count;
+			document.body.appendChild(swings);
 		},
 		render = function(){
 
-			// if(controller_state.swing){
-			// 	stick.style.backgroundColor = "green";
-			// }
-			// else{
-			// 	stick.style.backgroundColor = "red";
-			// }
+			if(controller_state.swing){
+				stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/whack.png">';
+				document.body.appendChild(stick);
+				swing_count ++;
+				add_swing_count();
+			}
+			else{
+				stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
+				document.body.appendChild(stick);
+			}
+
+			//If hit is detected, take away hit points
+			if(collision_check(stick, pinata) && controller_state.swing){
+				if (hit_points > 0) {
+					hit_points = hit_points - 10;
+					damage.innerHTML = 'Hit Points: ' + parseInt(hit_points);
+					document.body.appendChild(damage);
+				} else {
+					stick.innerHTML = '';
+					pinata.innerHTML = '';
+					document.body.appendChild(pinata);
+					document.body.appendChild(stick);
+					damage.innerHTML = 'YOU WIN A PRIZE!!!!!!';
+				}
+			}
 
 			//Current position of stick div
 			currentPos = stick.getBoundingClientRect();
 			left = currentPos.left;
 			up = currentPos.top;
-			
-		// 	if (move < (window.innerWidth-stick.offsetWidth)){
-		// 	stick.style.left = move + 'px';
-		// } else {
-
-		// }
-
 
 			stick_xpos = controller_state.steerx;
-            stick_ypos = controller_state.steery;
-            stick_zpos = controller_state.steerz;
+			stick_ypos = controller_state.steery;
+			stick_zpos = controller_state.steerz;
 
             //Move left or right depending on positive or negitive x axis value
             if (stick_xpos >= 270 && stick_xpos < 360) {
-				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-					moveLeftRight = left - 5;
-					console.log('left', deviceLeftRight);
-				} else {
-					moveLeftRight = left + 50;
-					window.navigator.vibrate(100);
-				}
-			} else if (stick_xpos <= 260 && stick_xpos > 180) {
-				if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-					moveLeftRight = left + 5;
-					console.log('right', deviceLeftRight);
-				} else {
-					moveLeftRight = left - 50;
-					window.navigator.vibrate(100);
-				}
-			}
+            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+            		moveLeftRight = left - 30;
+            	} else {
+            		
+            	}
+            } else if (stick_xpos <= 260 && stick_xpos > 180) {
+            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+            		moveLeftRight = left + 30;
+            	} else {
+            		
+            	}
+            }
 
+			//Move up or down depending on positive or negitive y axis value
 			if (stick_ypos >= 5 && stick_ypos <= 90) {
 				if (moveUpDown > (-(stick.offsetHeight / 2)) && (window.innerHeight - stick.offsetHeight)){
-					moveUpDown = up - 5;
-					console.log('up', up);
+					moveUpDown = up - 30;
 				} else {
 					moveUpDown = up + 100;
 				}
-			} else if (stick_xpos >= -15 && stick_xpos > -90) {
+			} else if (stick_ypos <= -2 && stick_ypos > -90) {
 				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (-(stick.offsetHeight / 2))){
-					moveUpDown = up + 5;
-					console.log('down', up);
+					moveUpDown = up + 30;
 				} else {
 					moveUpDown = up - 100;
 				}
 			}
 
-
-            //move left and right
-            // stick.style.transform = 
-            //Move up and down
+            //Move stick div up, down, left, right
             $stick.css({"top": moveUpDown, "left": moveLeftRight});
 
             //Rotation of stick
-            // stick.style.transform = 'rotate(' + stick_zpos + 'deg)';
-			
+
+            requestAnimationFrame(render);
+        },
 
 
-			/*
-			accelerate: false,
-			steerx: 0,
-			steery: 0,
-			steerz: 0,
-			swing: false
-			*/
+        controller_state = {};
 
-			requestAnimationFrame(render);
-		},
+        // background = document.createElement("div");
+        // background.id = 'backgroundimage';
+        // background.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/bullfight.jpg">';
+        // document.body.appendChild(background);
 
-
-		controller_state = {};
-
+		// Set up stick div and populate with img
 		stick = document.createElement("div");
 		stick.id = 'render_square';
 		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
 		document.body.appendChild(stick);
-		showPos(stick);
+		// showPos(stick);
 		$stick = $(stick);
 
-		deviceUpDown = window.innerHeight / 4;
-		deviceLeftRight = window.innerWidth / 2;
 		currentPos = stick.getBoundingClientRect();
 		moveLeftRight = currentPos.left;
-			moveUpDown = currentPos.top;
+		moveUpDown = currentPos.top;
 
+		// Set up Pinata div
 		pinata = document.createElement("div");
 		pinata.id = 'pinata';
 		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
 		document.body.appendChild(pinata);
 
-		hit = function() {
-			alert("hit pinata");
-		}
-		// buttonleft = document.createElement("div");
-		// buttonleft.id = 'left';
-		// buttonleft.innerHTML = '<button onclick="moveleft()">Move left</button>';
-		// document.body.appendChild(buttonleft);
+		damage = document.createElement("div");
+		damage.id = 'up';
+		damage.innerHTML = 'Damage: 1000';
+		document.body.appendChild(damage);
 
-		// buttonright = document.createElement("div");
-		// buttonright.id = 'right';
-		// buttonright.innerHTML = '<button onclick="moveright()">Move right</button>';
-		// document.body.appendChild(buttonright);
+		swings = document.createElement("div");
+		swings.id = 'left';
+		swings.innerHTML = 'Number of swings: 0';
+		document.body.appendChild(swings);
 
-		// buttonup = document.createElement("div");
-		// buttonup.id = 'up';
-		// buttonup.innerHTML = '<button onclick="moveup()">Move up</button>';
-		// document.body.appendChild(buttonup);
+		hit_points = 1000,
 
-		// buttondown = document.createElement("div");
-		// buttondown.id = 'down';
-		// buttondown.innerHTML = '<button onclick="movedown()">Move down</button>';
-		// document.body.appendChild(buttondown);
-
-		// moveleft = function(){
-			
-		// 	currentPos = stick.getBoundingClientRect();
-		// 	left = currentPos.left;
-		// 	move = left - 50;
-		// 	if (move > (0)){
-		// 	stick.style.left = move + 'px';
-		// } else {
-
-		// }
-		// };
-
-		// moveright = function(){
-			
-		// 	currentPos = stick.getBoundingClientRect();
-		// 	left = currentPos.left;
-		// 	move = left + 50;
-		// 	if (move < (window.innerWidth-stick.offsetWidth)){
-		// 	stick.style.left = move + 'px';
-		// } else {
-
-		// }
-		// };
-
-		// moveup = function(){
-			
-		// 	currentPos = stick.getBoundingClientRect();
-		// 	up = currentPos.top;
-		// 	move = up - 50;
-		// 	console.log(stick.offsetHeight);
-		// 	console.log(move);
-		// 	if (move > (0)){
-		// 	stick.style.top = move + 'px';
-		// } else {
-
-		// }
-
-		// };
-
-		// movedown = function(){
-			
-		// 	currentPos = stick.getBoundingClientRect();
-		// 	down = currentPos.top;
-		// 	move = down + 50;
-		// 	console.log(stick.offsetHeight);
-		// 	console.log(move);
-		// 	if (move < (window.innerHeight - stick.offsetHeight)){
-		// 	stick.style.top = move + 'px';
-		// } else {
-
-		// }
-		// };
-
-/*
-		renderer = new THREE.WebGLRenderer({
-			antialias: true
-		}),
-		scene = new THREE.Scene(),
-		camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000),
-
-		// Lights
-		ambient_light 		= new THREE.AmbientLight(0x222222),
-		directional_light = new THREE.DirectionalLight(0xffffff, 1),
-
-		// Used to load JSON models
-		loader = new THREE.JSONLoader(),
-
-		// Floor mesh
-		floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(300,300), new THREE.MeshLambertMaterial({color: 0x22FF11})),
-
-		// Render loop
-		render = function(){
-
-			// Render using scene and camera
-			renderer.render(scene, camera);
-
-			if(car){
-
-				// Rotate car
-				if(controller_state.steer){
-
-					// Gives a number ranging from 0 to 1
-					var percentage_speed = (speed / 2);
-
-					// Rotate the car using the steer value
-					// Multiplying it by the percentage speed makes the car not turn
-					// unless accelerating and turns quicker as the speed increases.
-					car.rotateY(controller_state.steer * percentage_speed);
-				}
-
-				// If controller is accelerating
-				if(controller_state.accelerate){
-
-					// Add to speed until it is 2
-					if(speed < 2){
-						speed += 0.05;
-					}else{
-						speed = 2;
-					}
-
-				// If controller is not accelerating
-				}else{
-
-					// Subtract from speed until 0
-					if(0 < speed){
-						speed -= 0.05;
-					}else{
-						speed = 0;
-					}
-				}
-
-				// Move car "forward" at speed
-				car.translateZ(speed);
-
-				// Collisions
-				if(car.position.x > 150){
-					car.position.x = 150;
-				}
-				if(car.position.x < -150){
-					car.position.x = -150;
-				}
-				if(car.position.z > 150){
-					car.position.z = 150;
-				}
-				if(car.position.z < -150){
-					car.position.z = -150;
-				}
-			}
-
-			// Call self
-			requestAnimationFrame(render);
-		},
-		car,
-		speed = 0,
-		controller_state = {};
-
-		// Enable shadows
-		renderer.shadowMapEnabled = true;
-
-		// Moves the camera "backward" (z) and "up" (y)
-		camera.position.z = -300;
-		camera.position.y = 100;
-
-		// Points the camera at the center of the floor
-		camera.lookAt(floor.position);
-
-		// Moves the directional light
-		directional_light.position.y = 150; // "up" / "down"
-		directional_light.position.x = -100; // "left" / "right"
-		directional_light.position.z = 60; // "forward" / "backward"
-
-		// Make the light able to cast shadows
-		directional_light.castShadow = true;
-
-		// Rotates the floor 90 degrees, so that it is horizontal
-		floor.rotation.x = -90 * (Math.PI / 180)
-
-		// Make the floor able to recieve shadows
-		floor.receiveShadow = true;
-
-
-		// Load the car model
-		loader.load(
-			'public/car.js',
-
-			function ( geometry, materials ) {
-
-				// Create the mesh from loaded geometry and materials
-				var material = new THREE.MeshFaceMaterial( materials );
-				car = new THREE.Mesh( geometry, material );
-
-				// Can cast shadows
-				car.castShadow = true;
-
-				// Add to the scene
-				scene.add( car );
-			}
-		)
-
-		// Add camera, lights and floor to the scene
-		scene.add(camera);
-		scene.add(ambient_light);
-		scene.add(directional_light);
-		scene.add(floor);
-
-		// Set size of renderer using window dimensions
-		renderer.setSize(window.innerWidth, window.innerHeight);
-
-		// Append to DOM
-		document.body.appendChild(renderer.domElement);
-*/
-		//add_swing_count();
 		// This sets off the render loop
 		render();
 
@@ -504,7 +280,7 @@ io.on('connect', function() {
 
 				// Hide the QR code
 				QR_code_element.style.display = "none";
-				setInitialOrientation();
+				// setInitialOrientation();
 				//add_swing_count();
 
 			}else{
@@ -542,97 +318,115 @@ io.on('connect', function() {
 				// Successful connection
 				alert("Connected!");
 
+				// Set up variables for controller state
 				var controller_state = {
 					accelerate: false,
 					steerx: 0,
 					steery: 0,
 					steerz: 0,
-					swing: false
+					motionx: 0,
+					motiony: 0,
+					motionz: 0,
+					swing: false,
+					compassHeading: 0
 				},
+
 				emit_updates = function(){
 					io.emit('controller_state_change', controller_state);
-				}
+				},
+
 				touchstart = function(e){
 					e.preventDefault();
-
+					
+					hit();
 					controller_state.accelerate = true;
 					emit_updates();
-				},
+				}
+
 				touchend = function(e){
 					e.preventDefault();
 					
 					controller_state.accelerate = false;
 					emit_updates();
 				},
+
 				devicemotion = function(e){
-                    // controller_state.steerx = e.accelerationIncludingGravity.x / 100;
-                    // controller_state.steery = e.accelerationIncludingGravity.y / 100;
-                    // controller_state.steerz = e.accelerationIncludingGravity.z * 9;
+					controller_state.motionx = e.acceleration.x * 100;
+					controller_state.motiony = e.acceleration.y * 100;
+					controller_state.motionz = e.acceleration.z * 100;
 
-                    /*
-                    controllerx = Math.round(e.acceleration.x * 100);
-                    controllery = Math.round(e.acceleration.y * 100);
-                    controllerz = Math.round(e.acceleration.z * 100);
-                    document.getElementById("accellx").innerHTML = "X-acceleration: " + controllerx;
-                    document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
-                    document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
-*/
-                    // controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
-                    // controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
-                    // controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
-                    // document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
-                    // document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
-                    // document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
-/*
-                    rotationx = Math.round(e.rotation.x);
-                    rotationy = Math.round(e.rotation.y);
-                    rotationz = Math.round(e.rotation.z);
-                    document.getElementById("rotationx").innerHTML = "X-rotation: " + rotationx;
-                    document.getElementById("rotationy").innerHTML = "Y-rotation: " + rotationy;
-                    document.getElementById("rotationz").innerHTML = "Z-rotation: " + rotationz;
-                    */
+					document.getElementById("accellGravx").innerHTML = "X-acceleration: " + controller_state.motionx;
+					document.getElementById("accellGravy").innerHTML = "Y-acceleration: " + controller_state.motiony;
+					document.getElementById("accellGravz").innerHTML = "Z-acceleration: " + controller_state.motionz;
 
-                    emit_updates();
-                },
+					emit_updates();
+				},
 
-                detect_swing = function(e){
-                	if(((e.acceleration.x * 1000) > 1500 || (e.acceleration.x * 1000) < -1500 ) &&
-                		//((e.acceleration.y * 1000) > 1000 || (e.acceleration.y * 1000) < -1000 ) &&
-                		((e.acceleration.z * 1000) > 1500 || (e.acceleration.z * 1000) < -1500 )){
-                		controller_state.swing = true;
-                	}
-                	else{
-                		controller_state.swing = false;
-                	}
+				detect_swing = function(e){
+					if(((e.acceleration.z * 100) > 3000 || (e.acceleration.z * 100) < -3000 )){
+						controller_state.swing = true;
+						console.log("Controller swing true!!");
+					} else { 
+						controller_state.swing = false;
+					}
 
-                	emit_updates();
-                },
+					emit_updates();
+				},
 
-                setInitialOrientation = function handleOrientation(e) {
-
-                	initialAlpha = e.alpha;
-                	initialBeta = e.beta;
-                	initialGamma = e.gamma;
-
-                	emit_updates();
-                }
-
-                handleOrientation = function handleOrientation(e) {
+				handleOrientation = function handleOrientation(e) {
+                	// Get the orientation of the device
 				  // deviceabsolute = e.absolute;
 				  controller_state.steerx  = e.alpha;
 				  controller_state.steery  = e.beta;
 				  controller_state.steerz  = e.gamma;
 
-				  // Do stuff with the new orientation data
-				  document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controller_state.steerx;
-                  document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controller_state.steery;
-                  document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controller_state.steerz;
+				  emit_updates();
+				},
 
+				compassHeading = function compassHeading(e) {
+					console.log("compassHeading");
+				  // Convert degrees to radians
+				  var alphaRad = e.alpha * (Math.PI / 180);
+				  var betaRad = e.beta * (Math.PI / 180);
+				  var gammaRad = e.gamma * (Math.PI / 180);
+
+				  // Calculate equation components
+				  var cA = Math.cos(alphaRad);
+				  var sA = Math.sin(alphaRad);
+				  var cB = Math.cos(betaRad);
+				  var sB = Math.sin(betaRad);
+				  var cG = Math.cos(gammaRad);
+				  var sG = Math.sin(gammaRad);
+
+				  // Calculate A, B, C rotation components
+				  var rA = - cA * sG - sA * sB * cG;
+				  var rB = - sA * sG + cA * sB * cG;
+				  var rC = - cB * cG;
+
+				  // Calculate compass heading
+				  var compassHeading = Math.atan(rA / rB);
+
+				  // Convert from half unit circle to whole unit circle
+				  if(rB < 0) {
+				  	compassHeading += Math.PI;
+				  }else if(rA < 0) {
+				  	compassHeading += 2 * Math.PI;
+				  }
+
+				  // Convert radians to degrees
+				  compassHeading *= 180 / Math.PI;
+
+				  controller_state.compassHeading = compassHeading;
+				  console.log(controller_state.compassHeading);
 
 				  emit_updates();
 				},
 
+				hit = function() {
+					alert("hit pinata");
+				},
 
+				//Window and Body listeners
 				document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
 				document.body.addEventListener('MSPointerDown', touchstart, false); // Windows Phone
 				document.body.addEventListener('touchend', touchend, false); // iOS & Android
@@ -640,11 +434,7 @@ io.on('connect', function() {
 				window.addEventListener('devicemotion', devicemotion, false);
 				window.addEventListener('devicemotion', detect_swing, false);
 				window.addEventListener("deviceorientation", handleOrientation, true);
-
-				mobilebtn = document.createElement("div");
-					mobilebtn.id = 'mobile_btn';
-					mobilebtn.innerHTML = '<button onclick="hit()">HIT ME!!!!!!!</button>';
-					document.body.appendChild(mobilebtn);
+				window.addEventListener("deviceorientation", compassHeading, true);
 
 			}else{
 
