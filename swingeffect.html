@@ -1,0 +1,97 @@
+<html>
+   <head>
+      <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+      <style>
+      
+         #animated { 
+            background-image: url('http://visualidentity.cachefly.net/studio/websocket/images/pinata.png'); 
+            background-repeat: no-repeat;
+            background-position: center top; 
+            padding-top:95px;
+            margin-bottom:60px;
+            -webkit-animation: swing 10s ease-in-out forwards infinite;
+            animation: swing 10s ease-in-out forwards infinite;
+            -webkit-animation-fill-mode: both; 
+            animation-fill-mode: both;
+            height:80%;
+         }
+         
+         @-webkit-keyframes swing { 
+            10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100% { -webkit-transform-origin: top center; } 
+            10% { -webkit-transform: rotate(30deg); }
+            20% { -webkit-transform: rotate(-30deg); }
+            30% { -webkit-transform: rotate(30deg); }
+            40% { -webkit-transform: rotate(-20deg); } 
+            50% { -webkit-transform: rotate(20deg); }
+            60% { -webkit-transform: rotate(-10deg); } 
+            70% { -webkit-transform: rotate(10deg); }
+            80% { -webkit-transform: rotate(-5deg); }
+            90% { -webkit-transform: rotate(5deg); }
+            100% { -webkit-transform: rotate(0deg); } 
+         }
+         
+         @keyframes swing { 
+            10% { transform: rotate(30deg); }
+            20% { transform: rotate(-30deg); }
+            30% { transform: rotate(30deg); }
+            40% { transform: rotate(-20deg); } 
+            50% { transform: rotate(20deg); }
+            60% { transform: rotate(-10deg); } 
+            70% { transform: rotate(10deg); }
+            80% { transform: rotate(-5deg); }
+            90% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+         }
+         
+         #swing { 
+            -webkit-transform-origin: top center; 
+            transform-origin: top center; 
+            -webkit-animation-name: swing; 
+            animation-name: swing; 
+         }
+      </style>
+      
+   </head>
+   <body>
+   
+      <div id="animated-example" id="animated swing"></div>
+      <button onclick="findKeyframesRule('swing')">Reload page</button>
+      
+      <script>
+function findKeyframesRule(rule) {
+var value = 100;
+console.log(".swing".css);
+var newrule = " swing { 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100% { -webkit-transform-origin: top center; } \
+            10% { -webkit-transform: rotate(" + value + "deg); } \
+            20% { -webkit-transform: rotate(" + value + "deg); } \
+            30% { -webkit-transform: rotate(" + value + "deg); } \
+            40% { -webkit-transform: rotate(" + value + "deg); } \
+            50% { -webkit-transform: rotate(" + value + "deg); } \
+            60% { -webkit-transform: rotate(" + value + "0deg); } \
+            70% { -webkit-transform: rotate(" + value + "deg); } \
+            80% { -webkit-transform: rotate(" + value + "deg); } \
+            90% { -webkit-transform: rotate(" + value + "deg); } \
+            100% { -webkit-transform: rotate(0deg); } \
+         }"
+  var ss = document.styleSheets;
+  for (var i = 0; i < ss.length; ++i) {
+    for (var j = 0; j < ss[i].cssRules.length; ++j) {
+      if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && 
+      ss[i].cssRules[j].name == rule) { 
+         console.log(ss[i].cssRules[j]);
+         var rules = ss[i].cssRules[j];
+         console.log(rules.cssRules.length);
+
+         
+            rules.cssText = (newrule);
+         
+         console.log(rules.cssRules);
+        return ss[i].cssRules[j]; }
+    }
+  }
+  return null;
+}
+      </script>
+      
+   </body>
+</html>

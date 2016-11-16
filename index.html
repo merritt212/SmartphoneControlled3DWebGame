@@ -3,265 +3,268 @@
 	<title>Smartphone Controller Game</title>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="//davidshimjs.github.com/qrcodejs/qrcode.min.js"></script>
+	<script src="//threejs.org/build/three.min.js"></script>
 	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 	<style>
 		body{
 			margin: 0;
 		}
-		#backgroundimage img {
-			width: 100%;
-			height: 100%;
-		}
 		#QR_code{
 			position: absolute;
 			top: 0;
+			left: 0;
 			padding: 20px;
 			background: white;
+			z-index:3;
+		}
+		#render_stick{
+			position: absolute;
+			top: 30%;
+			left: 45%;
+			z-index: 2;
 		}
 
-		#accell {
-			font-size:50px;
-		}
-
-		#render_square {
-			position:absolute;
-			top:30%;
-			left:40%;
-			z-index:99;
-		}
-		#pinata {
-			position:absolute;
-			top:30%;
-			left:30%;
-			z-index:1;
-		}
-		#left {
-			position: absolute;
-			top:0;
-			left:500px;
-		}
-		#right {
-			position: absolute;
-			top:0;
-			left:600px;
-		}
-		#up {
-			position: absolute;
-			top:0;
-			left:700px;
-			font-family: arial, sans-serif;
-			font-size:40px;
-		}
-		#down {
-			position: absolute;
-			top:0;
-			left:800px;
-		}
-		#rotate {
-			position: absolute;
-			top:0;
-			left:900px;
-		}
-
-		#mobile_btn {
-			width:200px;
-			height:200px; 
-			background-color: green;
-			color:white;
-			font-size:30px;
-		}
+		.animated { 
+            background-image: url("http://visualidentity.cachefly.net/studio/websocket/images/pinata.png"); 
+            background-repeat: no-repeat;
+            background-position: center top; 
+            margin-top:-200px;
+            -webkit-animation: swing 10s ease-in-out forwards infinite;
+            animation: swing 10s ease-in-out forwards infinite;
+            -webkit-animation-fill-mode: both; 
+            animation-fill-mode: both;
+            height:80%;
+         }
+         
+         @-webkit-keyframes swing { 
+            20%, 40%, 60%, 80%, 100% { -webkit-transform-origin: top center; } 
+            20% { -webkit-transform: rotate(15deg); } 
+            40% { -webkit-transform: rotate(-10deg); } 
+            60% { -webkit-transform: rotate(5deg); } 
+            80% { -webkit-transform: rotate(-5deg); } 
+            100% { -webkit-transform: rotate(0deg); } 
+         }
+         
+         @keyframes swing { 
+            20% { transform: rotate(15deg); } 
+            40% { transform: rotate(-10deg); } 
+            60% { transform: rotate(5deg); } 
+            80% { transform: rotate(-5deg); } 
+            100% { transform: rotate(0deg); } 
+         }
+         
+         .swing { 
+            -webkit-transform-origin: top center; 
+            transform-origin: top center; 
+            -webkit-animation-name: swing; 
+            animation-name: swing; 
+         }
 	</style>
 </head>
 <body>
-	<div class="accell">Compas Heading</div>
-	<div id="heading" class="accell"></div>
-	<br />
-	<br />
-	<div class="accell">Acceleration Including Gravity</div>
-	<div id="accellGravx" class="accell"></div>
-	<div id="accellGravy" class="accell"></div>
-	<div id="accellGravz" class="accell"></div>
-	<br />
+	<div>Accel</div>
+	<div id="accellx"></div>
+	<div id="accelly"></div>
+	<div id="accellz"></div><br/><br/>
+	<div>AccelGrav</div>
+	<div id="accellGravx"></div>
+	<div id="accellGravy"></div>
+	<div id="accellGravz"></div><br/><br/>
+	<div>Rotation</div>
+	<div id="rotationx"></div>
+	<div id="rotationy"></div>
+	<div id="rotationz"></div><br/><br/>
+	<div id="collision-check">Hit Points: -</div>
 </body>
 <script>
+
 var ip = '192.168.167.130', // Your ip
-port = ':2000',
-io = io.connect(),
-current_url = window.location.href;
+		port = ':2000',
+		io = io.connect(),
+		current_url = window.location.href;
+
 io.on('connect', function() {
-	
+
 	// Game setup
 	var game = function(ip){
-		var QR_code_element,
 
+		
+		var QR_code_element,
 		create_QR = function(){
+
 			var QR_code,
-			url = "http://" + ip + port + "?id=" + io.id;
+					url = "http://" + ip + port + "?id=" + io.id;
+
 			// Create the container for the QR code to be created in
 			QR_code_element = document.createElement('div');
+
+			QR_code_element.innerHTML = io.id;
+
 			// Assign an id to the element
 			QR_code_element.id = "QR_code";
+
 			// Append QR code element to the body
 			document.body.appendChild(QR_code_element);
+
 			// Assign the actual DOM element
 			QR_code_element = document.getElementById('QR_code');
+
 			// Create a QRCode
 			QR_code = new QRCode("QR_code");
 			QR_code.makeCode(url);
 		},
-
-		//Show position of Pinata div
-		// showPos = function(elem) {
-		// 	var r = elem.getBoundingClientRect()
-		// 	alert("Top: "+r.top);
-		// },
-
-		// When game is connected create the QR code and remove game listener handler
+		
 		game_connected = function(){
+
 			create_QR();
+
 			io.removeListener('game_connected', game_connected);
 		},
-
 		collision_check = function(div1, div2) {
 
 			div1coords = div1.getBoundingClientRect();
 			div2coords = div2.getBoundingClientRect();
 
 			var x1 = div1coords.left;
-			var y1 = div1coords.top;
-			var h1 = div1coords.right - div1coords.left;
-			var w1 = div1coords.bottom - div1coords.top;
-			var b1 = y1 + h1;
-			var r1 = x1 + w1;
-			var x2 = div2coords.left;
-			var y2 = div2coords.top;
-			var h2 = div2coords.right - div2coords.left;
-			var w2 = div2coords.bottom - div2coords.top;
-			var b2 = y2 + h2;
-			var r2 = x2 + w2;
-
+		    var y1 = div1coords.top;
+		    var h1 = div1coords.right - div1coords.left;
+		    var w1 = div1coords.bottom - div1coords.top;
+		    var b1 = y1 + h1;
+		    var r1 = x1 + w1;
+		    var x2 = div2coords.left;
+		    var y2 = div2coords.top;
+		    var h2 = div2coords.right - div2coords.left;
+		    var w2 = div2coords.bottom - div2coords.top;
+		    var b2 = y2 + h2;
+		    var r2 = x2 + w2;
+		        
 			if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) return false;
 			return true;
 		},
 
-		swing_count = 0,
-
-		add_swing_count = function(){
-			swings.innerHTML = 'Number of swings: ' + swing_count;
-			document.body.appendChild(swings);
-		},
+		hit_points = 0,
 		render = function(){
 
+			//Change colour on swing
 			if(controller_state.swing){
-				stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/whack.png">';
-				document.body.appendChild(stick);
-				swing_count ++;
-				add_swing_count();
+				stick.style.backgroundColor = "green";
 			}
 			else{
-				stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
-				document.body.appendChild(stick);
+				stick.style.backgroundColor = "transparent";
 			}
 
 			//If hit is detected, take away hit points
-			if(collision_check(stick, pinata) && controller_state.swing){
-				if (hit_points > 0) {
-					hit_points = hit_points - 10;
-					damage.innerHTML = 'Hit Points: ' + parseInt(hit_points);
-					document.body.appendChild(damage);
-				} else {
-					stick.innerHTML = '';
-					pinata.innerHTML = '';
-					document.body.appendChild(pinata);
-					document.body.appendChild(stick);
-					damage.innerHTML = 'YOU WIN A PRIZE!!!!!!';
+			if(collision_check(stick, donkey) && controller_state.swing){
+
+				//Convert both forces to positive
+				if(controller_state.steerx < 0){controller_state.steerx = controller_state.steerx * -1;}
+				if(controller_state.steerz < 0){controller_state.steerz = controller_state.steerz * -1;}
+
+				//Check which force has higher value
+				highest_force = controller_state.steerz;
+				if(controller_state.steerx > controller_state.steerz){
+					highest_force = controller_state.steerx;
 				}
+
+				//Use highest force as multiplier
+				hit_points = hit_points - (100 * highest_force);
+				collision.innerHTML = 'Hit Points: ' + parseInt(hit_points);
 			}
 
-			//Current position of stick div
-			currentPos = stick.getBoundingClientRect();
-			left = currentPos.left;
-			up = currentPos.top;
+			/*** MOVEMENT ***/
+			//Get current accelerometer reading
+			stick_xpos = -(controller_state.steerz * (window.innerWidth * 4));
+			stick_ypos = -(controller_state.steerx * (window.innerHeight));
 
-			stick_xpos = controller_state.steerx;
-			stick_ypos = controller_state.steery;
-			stick_zpos = controller_state.steerz;
+			//Non-median based movement
+			//if(controller_state.swing){
+			//	stick.style.transform = 'translateX(' + (stick_xpos / 3) + 'px) rotate(' + (stick_xpos / 6) + 'deg)';
+			//}
+			//else{
+			//	stick.style.transform = 'translateX(' + stick_xpos + 'px) translateY(' + stick_ypos + 'px) rotate(' + (stick_xpos / 6) + 'deg)';
+			//}
 
-            //Move left or right depending on positive or negitive x axis value
-            if (stick_xpos >= 270 && stick_xpos < 360) {
-            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-            		moveLeftRight = left - 30;
-            	} else {
-            		
-            	}
-            } else if (stick_xpos <= 260 && stick_xpos > 180) {
-            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-            		moveLeftRight = left + 30;
-            	} else {
-            		
-            	}
-            }
-
-			//Move up or down depending on positive or negitive y axis value
-			if (stick_ypos >= 5 && stick_ypos <= 90) {
-				if (moveUpDown > (-(stick.offsetHeight / 2)) && (window.innerHeight - stick.offsetHeight)){
-					moveUpDown = up - 30;
-				} else {
-					moveUpDown = up + 100;
+			//Use median of accelerometer readings to calculate movement
+			if(prevx.length > 6 && prevy.length > 6){
+				
+				//Get median for x readings
+				xlow = 0;
+				xhigh = 0;
+				for(var key in prevx){
+				    if(prevx[key] > xhigh){ xhigh = prevx[key]; }
+				    if(prevx[key] < xlow){ xlow = prevx[key]; } 
 				}
-			} else if (stick_ypos <= -2 && stick_ypos > -90) {
-				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (-(stick.offsetHeight / 2))){
-					moveUpDown = up + 30;
-				} else {
-					moveUpDown = up - 100;
+				xmedian = (xhigh + xlow) / 2;
+
+				//Get median for y readings
+				ylow = 0;
+				yhigh = 0;
+				for(var key in prevy){
+				    if(prevy[key] > yhigh){ yhigh = prevy[key]; }
+				    if(prevy[key] < ylow){ ylow = prevy[key]; } 
+				}
+				ymedian = (yhigh + ylow) / 2;
+
+				//Move stick according to controller orientation
+				if(controller_state.orientation == 'left'){
+					stick.style.transform = 'translateX(' + -(xmedian * 2) + 'px) translateY(' + -(ymedian) + 'px) rotate(' + -(xmedian / 6) + 'deg)';
+				}
+				else{
+					stick.style.transform = 'translateX(' + (xmedian * 2) + 'px) translateY(' + ymedian + 'px) rotate(' + (xmedian / 6) + 'deg)';
+				}
+				
+			}			
+
+			//Update array of accelerometer readings (as long as not in swing mode)
+			if(!controller_state.swing){
+				if(prevx.length <= 7){
+					prevx.push(stick_xpos);
+				}
+				else{
+					prevx.shift();
+					prevx.push(stick_xpos);
+				}
+
+
+				if(prevx.length <= 7){
+					prevy.push(stick_ypos);
+				}
+				else{
+					prevy.shift();
+					prevy.push(stick_ypos);
 				}
 			}
+		
+			/*
+			accelerate: false,
+			steerx: 0,
+			steery: 0,
+			steerz: 0,
+			swing: false
+			*/
+			requestAnimationFrame(render);
+		},
 
-            //Move stick div up, down, left, right
-            $stick.css({"top": moveUpDown, "left": moveLeftRight});
 
-            //Rotation of stick
+		controller_state = {};
 
-            requestAnimationFrame(render);
-        },
-
-
-        controller_state = {};
-
-        // background = document.createElement("div");
-        // background.id = 'backgroundimage';
-        // background.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/bullfight.jpg">';
-        // document.body.appendChild(background);
-
-		// Set up stick div and populate with img
 		stick = document.createElement("div");
-		stick.id = 'render_square';
+		stick.id = 'render_stick';
 		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
 		document.body.appendChild(stick);
-		// showPos(stick);
-		$stick = $(stick);
 
-		currentPos = stick.getBoundingClientRect();
-		moveLeftRight = currentPos.left;
-		moveUpDown = currentPos.top;
+		donkey = document.createElement("div");
+		donkey.className = 'animated swing';
+		// donkey.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/pinata.png">';
+		document.body.appendChild(donkey);
 
-		// Set up Pinata div
-		pinata = document.createElement("div");
-		pinata.id = 'pinata';
-		pinata.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/idhitthat.png">';
-		document.body.appendChild(pinata);
+		collision = document.getElementById("collision-check");
 
-		damage = document.createElement("div");
-		damage.id = 'up';
-		damage.innerHTML = 'Damage: 1000';
-		document.body.appendChild(damage);
+		prevxfiller = document.getElementById("accellGravx");
+		prevyfiller = document.getElementById("accellGravy");
 
-		swings = document.createElement("div");
-		swings.id = 'left';
-		swings.innerHTML = 'Number of swings: 0';
-		document.body.appendChild(swings);
-
-		hit_points = 1000,
+		prevx = [];
+		prevy = [];
 
 		// This sets off the render loop
 		render();
@@ -280,14 +283,25 @@ io.on('connect', function() {
 
 				// Hide the QR code
 				QR_code_element.style.display = "none";
-				// setInitialOrientation();
-				//add_swing_count();
+
+				//Show stick
+				// stick.style.display = 'block';
+
+				//Add hit points for pinata
+				hit_points = 2000;
 
 			}else{
 
 				// Show the QR code
 				QR_code_element.style.display = "block";
 
+				//Hide stick
+				//stick.style.display = 'none';
+
+				//Reset hit points
+				hit_points = 0;
+
+				//Reset controller state
 				controller_state = {};
 
 			}
@@ -318,123 +332,115 @@ io.on('connect', function() {
 				// Successful connection
 				alert("Connected!");
 
-				// Set up variables for controller state
+				calibrate_button_left = document.createElement("input");
+				calibrate_button_left.type = 'button';
+				calibrate_button_left.id = 'calibrate_button_left';
+				calibrate_button_left.value = 'Left';
+				calibrate_button_left.style.width = '100%';
+				calibrate_button_left.style.height = '200px';
+				calibrate_button_left.style.background = 'green';
+				calibrate_button_left.style.color = 'white';
+				calibrate_button_left.style.fontSize = '3em';
+				calibrate_button_left.onclick = function(){ set_controller_orientation('left'); };
+				document.body.appendChild(calibrate_button_left);
+
+				calibrate_button_right = document.createElement("input");
+				calibrate_button_right.type = 'button';
+				calibrate_button_right.id = 'calibrate_button_right';
+				calibrate_button_right.value = 'Right';
+				calibrate_button_right.style.width = '100%';
+				calibrate_button_right.style.height = '200px';
+				calibrate_button_right.style.background = 'green';
+				calibrate_button_right.style.color = 'white';
+				calibrate_button_right.style.fontSize = '3em';
+				calibrate_button_right.onclick = function(){ set_controller_orientation('right'); };
+				document.body.appendChild(calibrate_button_right);
+
 				var controller_state = {
-					accelerate: false,
 					steerx: 0,
 					steery: 0,
 					steerz: 0,
-					motionx: 0,
-					motiony: 0,
-					motionz: 0,
 					swing: false,
-					compassHeading: 0
+					orientation: 'right'
 				},
-
 				emit_updates = function(){
 					io.emit('controller_state_change', controller_state);
-				},
-
-				touchstart = function(e){
-					e.preventDefault();
-					
-					hit();
-					controller_state.accelerate = true;
-					emit_updates();
 				}
+				/*
+				touchstart = function(e){
+					//e.preventDefault();
 
+					//controller_state.accelerate = true;
+					//emit_updates();
+				},
 				touchend = function(e){
-					e.preventDefault();
+					//e.preventDefault();
 					
-					controller_state.accelerate = false;
-					emit_updates();
+					//controller_state.accelerate = false;
+					//emit_updates();
 				},
-
+				*/
 				devicemotion = function(e){
-					controller_state.motionx = e.acceleration.x * 100;
-					controller_state.motiony = e.acceleration.y * 100;
-					controller_state.motionz = e.acceleration.z * 100;
+                    controller_state.steerx = e.accelerationIncludingGravity.x / 100;
+                    controller_state.steery = e.accelerationIncludingGravity.y / 100;
+                    controller_state.steerz = e.accelerationIncludingGravity.z / 100;
 
-					document.getElementById("accellGravx").innerHTML = "X-acceleration: " + controller_state.motionx;
-					document.getElementById("accellGravy").innerHTML = "Y-acceleration: " + controller_state.motiony;
-					document.getElementById("accellGravz").innerHTML = "Z-acceleration: " + controller_state.motionz;
+                    /*
+                    controllerx = Math.round(e.acceleration.x * 100);
+                    controllery = Math.round(e.acceleration.y * 100);
+                    controllerz = Math.round(e.acceleration.z * 100);
+                    document.getElementById("accellx").innerHTML = "X-acceleration: " + controllerx;
+                    document.getElementById("accelly").innerHTML = "Y-acceleration: " + controllery;
+                    document.getElementById("accellz").innerHTML = "Z-acceleration: " + controllerz;
 
-					emit_updates();
-				},
+                    controllerIncludingGravityx = Math.round(e.accelerationIncludingGravity.x);
+                    controllerIncludingGravityy = Math.round(e.accelerationIncludingGravity.y);
+                    controllerIncludingGravityz = Math.round(e.accelerationIncludingGravity.z);
+                    document.getElementById("accellGravx").innerHTML = "X-accelerationIncludingGravity: " + controllerIncludingGravityx;
+                    document.getElementById("accellGravy").innerHTML = "Y-accelerationIncludingGravity: " + controllerIncludingGravityy;
+                    document.getElementById("accellGravz").innerHTML = "Z-accelerationIncludingGravity: " + controllerIncludingGravityz;
+					*/
 
-				detect_swing = function(e){
-					if(((e.acceleration.z * 100) > 3000 || (e.acceleration.z * 100) < -3000 )){
-						controller_state.swing = true;
-						console.log("Controller swing true!!");
-					} else { 
-						controller_state.swing = false;
-					}
+                    emit_updates();
+                },
+                /*
+                devicerotation = function(e){
+                	rotationx = Math.round(e.alpha);
+                    rotationy = Math.round(e.beta);
+                    rotationz = Math.round(e.gamma);
+                    document.getElementById("rotationx").innerHTML = "X-rotation: " + rotationx;
+                    document.getElementById("rotationy").innerHTML = "Y-rotation: " + rotationy;
+                    document.getElementById("rotationz").innerHTML = "Z-rotation: " + rotationz;
 
-					emit_updates();
-				},
+                    emit_updates();
+                }
+				*/
+                detect_swing = function(e){
+                	if(e.accelerationIncludingGravity.x > 13 || e.accelerationIncludingGravity.x  < -13 ){ //&&
+                		//(e.accelerationIncludingGravity.z > 15 || e.accelerationIncludingGravity.z < -15 )){
+                		controller_state.swing = true;
+                	}
+                	else{
+                		controller_state.swing = false;
+                	}
 
-				handleOrientation = function handleOrientation(e) {
-                	// Get the orientation of the device
-				  // deviceabsolute = e.absolute;
-				  controller_state.steerx  = e.alpha;
-				  controller_state.steery  = e.beta;
-				  controller_state.steerz  = e.gamma;
+                	emit_updates();
+                },
+                set_controller_orientation = function(ori_string){
+                	if(controller_state.orientation != ori_string){
+	                	controller_state.orientation = ori_string;
+	                	alert('Controller orientation set to ' + ori_string);
+	                	emit_updates();
+	                }
+                }
 
-				  emit_updates();
-				},
-
-				compassHeading = function compassHeading(e) {
-					console.log("compassHeading");
-				  // Convert degrees to radians
-				  var alphaRad = e.alpha * (Math.PI / 180);
-				  var betaRad = e.beta * (Math.PI / 180);
-				  var gammaRad = e.gamma * (Math.PI / 180);
-
-				  // Calculate equation components
-				  var cA = Math.cos(alphaRad);
-				  var sA = Math.sin(alphaRad);
-				  var cB = Math.cos(betaRad);
-				  var sB = Math.sin(betaRad);
-				  var cG = Math.cos(gammaRad);
-				  var sG = Math.sin(gammaRad);
-
-				  // Calculate A, B, C rotation components
-				  var rA = - cA * sG - sA * sB * cG;
-				  var rB = - sA * sG + cA * sB * cG;
-				  var rC = - cB * cG;
-
-				  // Calculate compass heading
-				  var compassHeading = Math.atan(rA / rB);
-
-				  // Convert from half unit circle to whole unit circle
-				  if(rB < 0) {
-				  	compassHeading += Math.PI;
-				  }else if(rA < 0) {
-				  	compassHeading += 2 * Math.PI;
-				  }
-
-				  // Convert radians to degrees
-				  compassHeading *= 180 / Math.PI;
-
-				  controller_state.compassHeading = compassHeading;
-				  console.log(controller_state.compassHeading);
-
-				  emit_updates();
-				},
-
-				hit = function() {
-					alert("hit pinata");
-				},
-
-				//Window and Body listeners
-				document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
-				document.body.addEventListener('MSPointerDown', touchstart, false); // Windows Phone
-				document.body.addEventListener('touchend', touchend, false); // iOS & Android
-				document.body.addEventListener('MSPointerUp', touchend, false); // Windows Phone
+				//document.body.addEventListener('touchstart', touchstart, false); // iOS & Android
+				//document.body.addEventListener('MSPointerDown', touchstart, false); // Windows Phone
+				//document.body.addEventListener('touchend', touchend, false); // iOS & Android
+				//document.body.addEventListener('MSPointerUp', touchend, false); // Windows Phone
 				window.addEventListener('devicemotion', devicemotion, false);
 				window.addEventListener('devicemotion', detect_swing, false);
-				window.addEventListener("deviceorientation", handleOrientation, true);
-				window.addEventListener("deviceorientation", compassHeading, true);
+				//window.addEventListener('deviceorientation', devicerotation, false);
 
 			}else{
 
