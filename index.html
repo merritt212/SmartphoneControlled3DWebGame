@@ -189,29 +189,29 @@ io.on('connect', function() {
 
             //Move left or right depending on positive or negitive x axis value
             if (stick_xpos >= 270 && stick_xpos < 360) {
-            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-            		moveLeftRight = left - 30;
+            	if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+            		moveLeftRight = left - 15;
             	} else {
-            		
+            		moveLeftRight = left + 50;
             	}
             } else if (stick_xpos <= 260 && stick_xpos > 180) {
-            	if (moveLeftRight > 30 && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
-            		moveLeftRight = left + 30;
+            	if (moveLeftRight > (0) && moveLeftRight < (window.innerWidth-stick.offsetWidth)){
+            		moveLeftRight = left + 15;
             	} else {
-            		
+            		moveLeftRight = left - 50;
             	}
             }
 
 			//Move up or down depending on positive or negitive y axis value
 			if (stick_ypos >= 5 && stick_ypos <= 90) {
 				if (moveUpDown > (-(stick.offsetHeight / 2)) && (window.innerHeight - stick.offsetHeight)){
-					moveUpDown = up - 30;
+					moveUpDown = up - 15;
 				} else {
 					moveUpDown = up + 100;
 				}
 			} else if (stick_ypos <= -2 && stick_ypos > -90) {
 				if (moveUpDown < (window.innerHeight - stick.offsetHeight) && moveUpDown > (-(stick.offsetHeight / 2))){
-					moveUpDown = up + 30;
+					moveUpDown = up + 15;
 				} else {
 					moveUpDown = up - 100;
 				}
