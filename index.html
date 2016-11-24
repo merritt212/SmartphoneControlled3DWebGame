@@ -4,7 +4,9 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="//davidshimjs.github.com/qrcodejs/qrcode.min.js"></script>
 	<script src="//threejs.org/build/three.min.js"></script>
-	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquerykeyframes/0.0.9/jquery.keyframes.min.js"></script>
+	<script src="/public/velocity.js"></script>
 	<style>
 		body{
 			margin: 0;
@@ -25,31 +27,37 @@
 		}
 
 		.animated { 
-            background-image: url("http://visualidentity.cachefly.net/studio/websocket/images/pinata.png"); 
-            background-repeat: no-repeat;
-            background-position: center top; 
-            margin-top:-200px;
-            -webkit-animation: swing 10s ease-in-out forwards infinite;
-            animation: swing 10s ease-in-out forwards infinite;
-            -webkit-animation-fill-mode: both; 
-            animation-fill-mode: both;
-            height:80%;
-         }
+    width:260px;
+    height:640px;
+    background-image:url('http://visualidentity.cachefly.net/studio/websocket/images/pinata_small.png'); 
+    position:absolute;
+    left: 40%;
+    top: 10px;
+    background-repeat: no-repeat;
+}
+
+         #donkeyContainer {
+		    width:22px;
+		    height:22px;
+		    position: absolute;
+		    left: 40%;
+		    top: 0;
+		}
          
-         @-webkit-keyframes swing { 
+         /*@-webkit-keyframes swing { 
             20%, 40%, 60%, 80%, 100% { -webkit-transform-origin: top center; } 
-            20% { -webkit-transform: rotate(15deg); } 
-            40% { -webkit-transform: rotate(-10deg); } 
-            60% { -webkit-transform: rotate(5deg); } 
-            80% { -webkit-transform: rotate(-5deg); } 
+            20% { -webkit-transform: rotate(30deg); } 
+            40% { -webkit-transform: rotate(-30deg); } 
+            60% { -webkit-transform: rotate(20deg); } 
+            80% { -webkit-transform: rotate(-20deg); } 
             100% { -webkit-transform: rotate(0deg); } 
          }
          
          @keyframes swing { 
-            20% { transform: rotate(15deg); } 
-            40% { transform: rotate(-10deg); } 
-            60% { transform: rotate(5deg); } 
-            80% { transform: rotate(-5deg); } 
+            20% { transform: rotate(30deg); } 
+            40% { transform: rotate(-30deg); } 
+            60% { transform: rotate(20deg); } 
+            80% { transform: rotate(-20deg); } 
             100% { transform: rotate(0deg); } 
          }
          
@@ -58,7 +66,7 @@
             transform-origin: top center; 
             -webkit-animation-name: swing; 
             animation-name: swing; 
-         }
+         }*/
 	</style>
 </head>
 <body>
@@ -82,8 +90,26 @@ var ip = '192.168.167.130', // Your ip
 		port = ':2000',
 		io = io.connect(),
 		current_url = window.location.href;
+		runswing = false;
+
+ 
+            function swing(rotation) {
+            		swingrotation = rotation;
+            		swingtime = 1500;
+            		swings = 5;
+            		console.log(swingrotation);
+            		$('#donkeyContainer').velocity({rotateZ: rotation}, {duration: swingtime});
+                     if(swingrotation > 5){
+                     swingrotation *= -1;
+                    swingrotation = swingrotation/2;
+                    swing(swingrotation);
+                } else {
+                	$('#pendulum-parent').velocity({rotateZ: 0}, {duration: swingtime});
+                }
+            }
 
 io.on('connect', function() {
+
 
 	// Game setup
 	var game = function(ip){
@@ -117,30 +143,25 @@ io.on('connect', function() {
 		game_connected = function(){
 
 			create_QR();
-
 			io.removeListener('game_connected', game_connected);
 		},
 		collision_check = function(div1, div2) {
 
-			div1coords = div1.getBoundingClientRect();
-			div2coords = div2.getBoundingClientRect();
+			rect1Pos = div1.getBoundingClientRect();
+			rect2Pos = div2.getBoundingClientRect();
 
-			var x1 = div1coords.left;
-		    var y1 = div1coords.top;
-		    var h1 = div1coords.right - div1coords.left;
-		    var w1 = div1coords.bottom - div1coords.top;
-		    var b1 = y1 + h1;
-		    var r1 = x1 + w1;
-		    var x2 = div2coords.left;
-		    var y2 = div2coords.top;
-		    var h2 = div2coords.right - div2coords.left;
-		    var w2 = div2coords.bottom - div2coords.top;
-		    var b2 = y2 + h2;
-		    var r2 = x2 + w2;
-		        
-			if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) return false;
-			return true;
-		},
+			var rect1 = {x: (rect1Pos.left + (rect1Pos.right - rect1Pos.left)/4), y: rect1Pos.top, width: ((rect1Pos.right - rect1Pos.left)/2), height: (rect1Pos.bottom - rect1Pos.top)}
+			var rect2 = {x: (rect2Pos.left + (rect2Pos.right - rect2Pos.left)/4), y: rect2Pos.top, width: ((rect2Pos.right - rect2Pos.left)/2), height: (rect2Pos.bottom - rect2Pos.top)}
+
+			if (rect1.x < rect2.x + rect2.width &&
+				rect1.x + rect1.width > rect2.x &&
+				rect1.y < rect2.y + rect2.height &&
+				rect1.height + rect1.y > rect2.y) {
+				console.log('collision');
+			} else {
+				// console.log('not hit');
+			}
+	},
 
 		hit_points = 0,
 		render = function(){
@@ -155,7 +176,9 @@ io.on('connect', function() {
 
 			//If hit is detected, take away hit points
 			if(collision_check(stick, donkey) && controller_state.swing){
-
+				StickPos = stick.getBoundingClientRect();
+				PinataPos = donkey.getBoundingClientRect();
+				// alert("Stick: " + StickPos.top + " : " + StickPos.left + " || Pinata: " + PinataPos);
 				//Convert both forces to positive
 				if(controller_state.steerx < 0){controller_state.steerx = controller_state.steerx * -1;}
 				if(controller_state.steerz < 0){controller_state.steerz = controller_state.steerz * -1;}
@@ -165,7 +188,8 @@ io.on('connect', function() {
 				if(controller_state.steerx > controller_state.steerz){
 					highest_force = controller_state.steerx;
 				}
-
+				console.log(-(controller_state.velocityy));
+				swing(50);
 				//Use highest force as multiplier
 				hit_points = hit_points - (100 * highest_force);
 				collision.innerHTML = 'Hit Points: ' + parseInt(hit_points);
@@ -248,15 +272,20 @@ io.on('connect', function() {
 
 		controller_state = {};
 
+
 		stick = document.createElement("div");
 		stick.id = 'render_stick';
 		stick.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/Big_Stick.png">';
 		document.body.appendChild(stick);
 
+		var donkeyContainer = document.createElement("div");
+		donkeyContainer.id = 'donkeyContainer';
+		document.body.appendChild(donkeyContainer);
+
 		donkey = document.createElement("div");
 		donkey.className = 'animated swing';
 		// donkey.innerHTML = '<img src="http://visualidentity.cachefly.net/studio/websocket/images/pinata.png">';
-		document.body.appendChild(donkey);
+		donkeyContainer.appendChild(donkey);
 
 		collision = document.getElementById("collision-check");
 
@@ -361,6 +390,7 @@ io.on('connect', function() {
 					steery: 0,
 					steerz: 0,
 					swing: false,
+					velocityy: 0,
 					orientation: 'right'
 				},
 				emit_updates = function(){
@@ -384,6 +414,7 @@ io.on('connect', function() {
                     controller_state.steerx = e.accelerationIncludingGravity.x / 100;
                     controller_state.steery = e.accelerationIncludingGravity.y / 100;
                     controller_state.steerz = e.accelerationIncludingGravity.z / 100;
+                    controller_state.velocityy = Math.round(e.acceleration.y);
 
                     /*
                     controllerx = Math.round(e.acceleration.x * 100);

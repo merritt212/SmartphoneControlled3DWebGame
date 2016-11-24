@@ -1,0 +1,18 @@
+<html>
+<head>
+	<title>Stopwatch</title>
+	<script src="stopwatch.js"></script>
+	<style>
+		.stopwatch { color: red;  padding: 5px; border:none; width: 220px; margin:15px 0; float:center; }
+.lap { color: red;  padding: 1px; border:none; height:75%; width: 220px; margin:15px 0;}
+.button { width: 220px; margin:2px; }
+	</style>
+</head>
+<body>
+<input class="stopwatch" id="stopwatch" type="text" value="0:0:0"><br>
+    <input class="button" id="startandstopbutton" type="button" value="Start/Stop" onclick="startandstop();"><br>
+    <input class="button" id="marklapbutton" type="button" value="Split/Mark Lap" onclick="marklap();"><br>
+    <input class="button" id="resetbutton" type="button" value="Reset Stopwatch" onclick="resetstopwatch();"><br>
+    <textarea class="lap" id="lapdetails"></textarea>
+</body>
+</html>

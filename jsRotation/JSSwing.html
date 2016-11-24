@@ -1,0 +1,80 @@
+<html>
+<head>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="../jsRotation/jquery-animate-css-rotate-scale.js"></script>
+	<script src="../jsRotation/jquery-css-transform.js"></script>
+	<script src="../jsRotation/velocity.js"></script>
+	<style>
+		#pendulum-child {
+    width:500px;
+    height:650px;
+    background-image:url('http://visualidentity.cachefly.net/studio/websocket/images/pinata.png'); 
+    position:absolute;
+    left: -304px;
+    top: 10px;
+}
+ 
+#pendulum-parent {
+    width:22px;
+    height:22px;
+    position: absolute;
+    left: 40%;
+    top: 0;
+}
+
+.reset {
+	 transform: none;
+	}
+	</style>
+</head>
+<body>
+<div id="demo-container">
+    <div id="pendulum-parent">
+        <div id="pendulum-child"></div>
+    </div>
+    <div><button id="clickbutton">Swing Pinata</button></div>
+    <div><input type="text" id="rotate">Rotation (degs)</input></div>
+    <div><button id="restartbutton">Reswing Pinata</button></div>
+</div>
+<script>
+(function($) {
+        $(document).ready(function() {
+            var rotation = 0;
+            var swingtime = 1000;
+            var swings = 5
+ 
+            function init() {
+
+            }
+
+        	$("#clickbutton").click(function (){
+        		console.log("click");
+        		rotation = parseInt(document.getElementById('rotate').value);
+                     swing();
+                     $('#pendulum-parent').removeAttr('style');
+            }
+
+
+            );
+ 
+            function swing() {
+            		swingrotation = rotation;
+            		console.log(swingrotation);
+            		$('#pendulum-parent').velocity({rotateZ: rotation}, {duration: swingtime});
+            		for (i=0; i < swings; i++) {
+                     swingrotation *= -1;
+                    $('#pendulum-parent').velocity({rotateZ: swingrotation}, {duration: swingtime});
+                    swingrotation = swingrotation/2;
+                }
+                $('#pendulum-parent').velocity({rotateZ: 0}, {duration: swingtime});
+            	 
+                
+            }
+ 
+ 
+            init();
+    });
+})(jQuery);
+</script>
+</body>
+</html>

@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "pixi.js": "^4.1.1",
-    "socket.io": "^1.5.1"
+    "socket.io": "^1.5.1",
+     "jquery": "*",
+    "prefixfree": "*"
   }
 }
