@@ -1,0 +1,47 @@
+/nbproject
+
+
+# Dependency directory
+node_modules
+
+# Don't commit sourcemap files
+*.map
+
+# Grunt tmp files
+.grunt
+
+#DC - don't commit my .env file
+.env
+
+# devops symlinked directory
+devops
+
+# Ignore paths that contain user-generated content.
+httpdocs/sites/*/files
+httpdocs/sites/*/private
+
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+#Ignore sass & twig cache
+.cache
+twig_cache
+
+#Bower/Composer
+vendor/.git
+#httpdocs/sites/all/themes/agpc/src/vendor
+/httpdocs/nbproject/private/
+/httpdocs/nbproject
+
+*.orig
